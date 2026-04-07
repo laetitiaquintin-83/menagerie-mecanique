@@ -1,0 +1,69 @@
+# Protéger les fichiers sensibles et améliorer la sécurité
+<FilesMatch "^config\.php$">
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^connexion\.php$">
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "^auth\.php$">
+    Deny from all
+</FilesMatch>
+
+# Protéger le dossier .git
+<DirectoryMatch "\.git">
+    Deny from all
+</DirectoryMatch>
+
+# Protéger les fichiers SQL
+<FilesMatch "\.sql$">
+    Deny from all
+</FilesMatch>
+
+# Protéger les fichiers .env (si utilisés en production)
+<FilesMatch "\.env">
+    Deny from all
+</FilesMatch>
+
+# Désactiver l'affichage des répertoires
+Options -Indexes
+
+# Mode de réécriture (optionnel, pour URLs propres)
+RewriteEngine On
+
+# Rediriger les requêtes directes vers delete.php en POST seulement
+<Files "delete.php">
+    <Limit GET>
+        Deny from all
+    </Limit>
+</Files>
+
+<Files "delete_commande.php">
+    <Limit GET>
+        Deny from all
+    </Limit>
+</Files>
+
+# En production, ajouter les directives pour la sécurité des en-têtes
+<IfModule mod_headers.c>
+    # Empêcher le cache pour les pages sensibles
+    <Files "admin.php">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </Files>
+    
+    # Empêcher l'accès au formulaire de login du cache
+    <Files "login.php">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </Files>
+</IfModule>
+
+# Masquer la version de PHP
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+</IfModule>
