@@ -1,0 +1,8 @@
+<?php
+// Modèle de connexion - Remplir avec vos accès réels
+$host = 'localhost';
+$db   = 'nom_de_bdd';
+$user = 'utilisateur';
+$pass = 'mot_de_passe';
+// ... reste du code PDO
+?>
