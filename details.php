@@ -1,16 +1,23 @@
 <?php 
 session_start();
-include 'connexion.php';
+require_once 'config.php';
+require_once 'helpers.php';
 
-// On récupère l'ID qui est dans l'URL (ex: details.php?id=12)
-if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-    $req = $db->prepare("SELECT * FROM creatures WHERE id = ?");
-    $req->execute([$id]);
-    $animal = $req->fetch();
+$animal = null;
+
+// Récupérer et valider l'ID
+if (isset($_GET['id']) && validate_positive_integer($_GET['id'])) {
+    $id = intval($_GET['id']);
+    try {
+        $req = $db->prepare("SELECT * FROM creatures WHERE id = ?");
+        $req->execute([$id]);
+        $animal = $req->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('Erreur récupération détails: ' . $e->getMessage());
+    }
 }
 
-// Si l'animal n'existe pas, on redirige vers l'accueil
+// Si l'animal n'existe pas, rediriger
 if (!$animal) { 
     header('Location: index.php'); 
     exit(); 
@@ -21,7 +28,7 @@ if (!$animal) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapport : <?php echo $animal['nom']; ?></title>
+    <title>Rapport : <?= htmlspecialchars($animal['nom']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap" rel="stylesheet">
     <style>
         body { 
@@ -91,7 +98,6 @@ if (!$animal) {
         }
         .btn-retour:hover { color: #ffd700; transform: translateX(-5px); }
 
-        /* AJOUT : Style pour le bouton de commande */
         .btn-commande {
             display: inline-block;
             margin-top: 20px;
@@ -112,26 +118,26 @@ if (!$animal) {
     <div class="fiche-technique">
         <a href="index.php" class="btn-retour">← Retour à la collection</a>
         
-        <p style="text-align:right; font-family: 'Special Elite'; opacity: 0.6;">DOSSIER REF-<?php echo $animal['id']; ?>-B</p>
+        <p style="text-align:right; font-family: 'Special Elite'; opacity: 0.6;">DOSSIER REF-<?= htmlspecialchars($animal['id']) ?>-B</p>
         
-        <h1>PROTOCOLE : <?php echo strtoupper($animal['nom']); ?></h1>
+        <h1>PROTOCOLE : <?= htmlspecialchars(strtoupper($animal['nom'])) ?></h1>
         
         <div class="image-container">
-            <img src="<?php echo $animal['image_path']; ?>" alt="<?php echo $animal['nom']; ?>">
+            <img src="<?= htmlspecialchars($animal['image_path']) ?>" alt="<?= htmlspecialchars($animal['nom']) ?>">
         </div>
 
-        <div class="badge-cat">SÉRIE : <?php echo $animal['categorie']; ?></div>
+        <div class="badge-cat">SÉRIE : <?= htmlspecialchars($animal['categorie']) ?></div>
 
         <div class="histoire">
-            "<?php echo nl2br($animal['description']); ?>"
+            "<?= nl2br(htmlspecialchars($animal['description'])) ?>"
         </div>
 
         <div class="prix-label">
-            VALEUR : <?php echo $animal['prix']; ?> 🟡
+            VALEUR : <?= htmlspecialchars($animal['prix']) ?> 🟡
         </div>
 
         <div style="margin-top: 30px;">
-            <a href="contact.php?projet=<?php echo urlencode($animal['nom']); ?>" class="btn-commande">
+            <a href="contact.php?projet=<?= urlencode($animal['nom']) ?>" class="btn-commande">
                 ✉️ PASSER COMMANDE POUR CE MODÈLE
             </a>
         </div>

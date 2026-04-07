@@ -1,30 +1,52 @@
 <?php 
 session_start();
-include 'connexion.php';
+require_once 'config.php';
+require_once 'helpers.php';
 
-// PROTECTION : On vérifie si l'admin est bien connecté avec sa session sécurisée
-if(!isset($_SESSION['admin']) || $_SESSION['admin'] !== true) { 
-    header('Location: login.php'); 
-    exit(); 
-}
+// PROTECTION : Vérifier que l'admin est connecté
+require_admin_connection();
 
 // --- LOGIQUE D'AJOUT D'UNE CHIMÈRE ---
-if(isset($_POST['ajouter'])) {
-    $nom = htmlspecialchars($_POST['nom']); // Sécurité contre les failles XSS
-    $cat = $_POST['categorie'];
-    $prix = intval($_POST['prix']); // On s'assure que c'est un nombre
-    $desc = htmlspecialchars($_POST['description']);
-    
-    $image = $_FILES['image']['name'];
-    // On nettoie le nom du fichier pour éviter les espaces ou caractères bizarres
-    $image_nom = time() . "_" . basename($image); 
-    $target = "images/" . $image_nom;
-    
-    if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-        $ins = $db->prepare("INSERT INTO creatures (nom, categorie, prix, description, image_path) VALUES (?,?,?,?,?)");
-        $ins->execute([$nom, $cat, $prix, $desc, $target]);
-        header('Location: index.php?statut=succes');
-        exit();
+$error = null;
+$success = false;
+
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
+    // Vérifier CSRF
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = 'Requête invalide. Veuillez réessayer.';
+    } else {
+        // Valider les données
+        $nom = isset($_POST['nom']) ? sanitize_text($_POST['nom'], 100) : null;
+        $cat = isset($_POST['categorie']) ? sanitize_text($_POST['categorie']) : null;
+        $prix = isset($_POST['prix']) ? intval($_POST['prix']) : null;
+        $desc = isset($_POST['description']) ? sanitize_text($_POST['description'], 5000) : null;
+        
+        if (!$nom || !$cat || !$prix || !$desc) {
+            $error = 'Tous les champs sont requis.';
+        } elseif ($prix <= 0) {
+            $error = 'Le prix doit être positif.';
+        } else {
+            // Traiter l'upload
+            $image_path = handle_image_upload('image');
+            
+            if ($image_path === null) {
+                $error = $_SESSION['upload_error'] ?? 'Erreur lors de l\'upload du fichier.';
+            } else {
+                try {
+                    $ins = $db->prepare("INSERT INTO creatures (nom, categorie, prix, description, image_path) VALUES (?,?,?,?,?)");
+                    $ins->execute([$nom, $cat, $prix, $desc, $image_path]);
+                    $success = true;
+                    set_flash_message('Chimère créée avec succès !', 'success');
+                    header('Location: index.php');
+                    exit();
+                } catch (PDOException $e) {
+                    error_log('Erreur création chimère: ' . $e->getMessage());
+                    $error = 'Erreur lors de la création. Veuillez réessayer.';
+                    // Supprimer l'image en cas d'erreur
+                    delete_image_file($image_path);
+                }
+            }
+        }
     }
 }
 ?>
@@ -32,6 +54,7 @@ if(isset($_POST['ajouter'])) {
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La Forge des Chimères</title>
     <style>
         body { 
@@ -44,7 +67,7 @@ if(isset($_POST['ajouter'])) {
         .forge-container { 
             max-width: 600px; 
             margin: 0 auto; 
-            background: #f4e4bc; /* Couleur vieux papier */
+            background: #f4e4bc;
             padding: 40px; 
             border: 10px double #8b5a2b; 
             color: #2b1810;
@@ -55,6 +78,22 @@ if(isset($_POST['ajouter'])) {
             text-transform: uppercase; 
             border-bottom: 2px solid #2b1810; 
             padding-bottom: 10px;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
         }
         input, textarea, select { 
             width: 90%; 
@@ -76,6 +115,7 @@ if(isset($_POST['ajouter'])) {
             font-size: 1.2em;
             transition: 0.3s;
             margin-top: 20px;
+            width: auto;
         }
         .btn-creer:hover { 
             background: #8b5a2b; 
@@ -90,6 +130,15 @@ if(isset($_POST['ajouter'])) {
             font-weight: bold;
         }
         .link-back:hover { color: #2b1810; }
+        .file-input-label {
+            text-align: left;
+            width: 90%;
+            margin: 0 auto;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -99,25 +148,30 @@ if(isset($_POST['ajouter'])) {
         
         <h1>⚒️ Registre de Création</h1>
         
-        <p style="font-style: italic; font-size: 0.9em;">Session de l'Inventrice : <strong><?php echo $_SESSION['nom_admin']; ?></strong></p>
+        <p style="font-style: italic; font-size: 0.9em;">Session de l'Inventrice : <strong><?= htmlspecialchars($_SESSION['nom_admin'] ?? 'Admin') ?></strong></p>
+
+        <?php if ($error): ?>
+            <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data">
-            <input type="text" name="nom" placeholder="Nom de la Chimère" required>
+            <?php csrf_input(); ?>
             
-            <select name="categorie">
+            <input type="text" name="nom" placeholder="Nom de la Chimère" required maxlength="100">
+            
+            <select name="categorie" required>
+                <option value="">-- Choisir une série --</option>
                 <option value="Explorateur">Série Explorateur</option>
                 <option value="Mécanicien">Série Mécanicien</option>
                 <option value="Colosse">Série Colosse</option>
             </select>
             
-            <input type="number" name="prix" placeholder="Valeur (Pièces d'or)" required>
+            <input type="number" name="prix" placeholder="Valeur (Pièces d'or)" min="1" required>
             
-            <textarea name="description" rows="5" placeholder="Détails des engrenages et histoire..."></textarea>
+            <textarea name="description" rows="5" placeholder="Détails des engrenages et histoire..." required maxlength="5000"></textarea>
             
-            <div style="text-align: left; width: 90%; margin: 0 auto;">
-                <p style="font-size: 0.8em; font-weight: bold; margin-bottom: 5px;">Schéma visuel (Image) :</p>
-                <input type="file" name="image" required style="border: none; background: none; padding: 0;">
-            </div>
+            <label class="file-input-label">Schéma visuel (Image - Max 5MB) :</label>
+            <input type="file" name="image" accept="image/jpeg,image/png,image/gif,image/webp" required>
             
             <button type="submit" name="ajouter" class="btn-creer">SCELLER LA CRÉATION</button>
         </form>

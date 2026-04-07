@@ -1,21 +1,30 @@
 <?php 
 session_start(); 
-include 'connexion.php';
+require_once 'config.php';
+require_once 'helpers.php';
 
 // --- LOGIQUE DE RECHERCHE ET FILTRE ---
-$filtre = isset($_GET['cat']) ? $_GET['cat'] : 'tous';
-$recherche = isset($_GET['recherche']) ? $_GET['recherche'] : '';
+$filtre = isset($_GET['cat']) ? sanitize_text($_GET['cat']) : 'tous';
+$recherche = isset($_GET['recherche']) ? sanitize_text($_GET['recherche']) : '';
 
-if (!empty($recherche)) {
-    $requete = $db->prepare('SELECT * FROM creatures WHERE nom LIKE ? ORDER BY id DESC');
-    $requete->execute(["%$recherche%"]);
-} elseif ($filtre != 'tous') {
-    $requete = $db->prepare('SELECT * FROM creatures WHERE categorie = ? ORDER BY id DESC');
-    $requete->execute([$filtre]);
-} else {
-    $requete = $db->query('SELECT * FROM creatures ORDER BY id DESC');
+try {
+    if (!empty($recherche)) {
+        $requete = $db->prepare('SELECT * FROM creatures WHERE nom LIKE ? ORDER BY id DESC');
+        $requete->execute(["%$recherche%"]);
+    } elseif ($filtre != 'tous') {
+        $requete = $db->prepare('SELECT * FROM creatures WHERE categorie = ? ORDER BY id DESC');
+        $requete->execute([$filtre]);
+    } else {
+        $requete = $db->query('SELECT * FROM creatures ORDER BY id DESC');
+    }
+    $toutes_les_creatures = $requete->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('Erreur récupération créatures: ' . $e->getMessage());
+    $toutes_les_creatures = [];
 }
-$toutes_les_creatures = $requete->fetchAll();
+
+// Récupérer les messages flash
+$flash = show_flash_and_clear();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -33,6 +42,25 @@ $toutes_les_creatures = $requete->fetchAll();
             margin: 0; 
             padding: 0; 
             overflow-x: hidden;
+        }
+        
+        /* --- MESSAGES FLASH --- */
+        .flash-message {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .flash-success {
+            background: rgba(212, 237, 218, 0.1);
+            border-color: #155724;
+            color: #7dd17d;
+        }
+        .flash-error {
+            background: rgba(248, 215, 218, 0.1);
+            border-color: #721c24;
+            color: #ff6b6b;
         }
         
         /* --- LE SÉSAME (LOGIN/LOGOUT) --- */
@@ -191,6 +219,26 @@ $toutes_les_creatures = $requete->fetchAll();
             border: 2px dashed #8b5a2b; text-decoration: none; 
             border-radius: 5px; font-weight: bold; display: inline-block;
         }
+        
+        .btn-delete-form {
+            margin-top: 15px;
+            border-top: 1px solid rgba(139, 90, 43, 0.2);
+            padding-top: 10px;
+        }
+        
+        .btn-delete-form button {
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 11px;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 0;
+        }
+        
+        .btn-delete-form button:hover {
+            text-decoration: underline;
+        }
 
         /* --- RESPONSIVE --- */
         @media (max-width: 1024px) { .carte-animal { width: 45%; } }
@@ -198,6 +246,126 @@ $toutes_les_creatures = $requete->fetchAll();
             .engrenage { display: none; }
             .enseigne h1 { font-size: 32px !important; }
             .carte-animal { width: 95% !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-zone">
+    <?php if(is_admin_connected()): ?>
+        <a href="logout.php" class="logout-link">🗝️ Déconnexion</a>
+    <?php else: ?>
+        <a href="login.php">🗝️ Accès</a>
+    <?php endif; ?>
+</div>
+
+<?php if(is_admin_connected()): ?>
+    <div class="admin-bar">
+        <a href="commandes.php" style="color: #f4e4bc; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
+            📜 CONSULTER LE COURRIER DES COMMANDES
+        </a>
+    </div>
+<?php endif; ?>
+
+<?php if ($flash['message']): ?>
+    <div class="flash-message flash-<?= $flash['type'] ?>">
+        <?= htmlspecialchars($flash['message']) ?>
+    </div>
+<?php endif; ?>
+
+<div class="engrenage engrenage-1">⚙️</div>
+<div class="engrenage engrenage-2">⚙️</div>
+
+<div class="enseigne">
+    <h1>L'ATELIER DES CHIMÈRES</h1>
+    <p>La ménagerie mécanique...</p>
+</div>
+
+<?php if(isset($_SESSION['nom_admin'])): ?>
+    <div style="margin-bottom: 30px;">
+        <p style="color: #ffd700; font-style: italic;">
+            ⚙️ Bienvenue, Maîtresse <strong><?= htmlspecialchars($_SESSION['nom_admin']) ?></strong>.
+        </p>
+    </div>
+<?php endif; ?>
+
+<form method="GET" action="index.php" class="search-bar">
+    <input type="text" name="recherche" placeholder="Nom de la créature..." value="<?= htmlspecialchars($recherche) ?>">
+    <button type="submit">🔍</button>
+</form>
+
+<div class="nav-filtres" style="margin-bottom: 30px;">
+    <a href="index.php?cat=tous">Tous</a>
+    <a href="index.php?cat=Explorateur">Explorateurs</a>
+    <a href="index.php?cat=Mécanicien">Mécaniciens</a>
+    <a href="index.php?cat=Colosse">Colosses</a>
+    
+    <?php if(is_admin_connected()): ?>
+        <div style="margin-top: 30px;">
+            <a href="admin.php" class="btn-forge">⚒️ Accéder à la Forge</a>
+        </div>
+    <?php endif; ?>
+</div>
+
+<div style="margin: 20px 0;">
+    <a href="contact.php" style="
+        background: #d4af37; 
+        color: #1a110a; 
+        padding: 15px 25px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    ">
+        ✉️ PASSER UNE COMMANDE SPÉCIALE
+    </a>
+</div>
+
+<div class="grille-creatures">
+    <?php if(count($toutes_les_creatures) > 0): ?>
+        <?php foreach ($toutes_les_creatures as $animal): ?>
+            <div class="carte-animal">
+                <a href="details.php?id=<?= htmlspecialchars($animal['id']) ?>" style="text-decoration: none; color: inherit;">
+                    <div>
+                        <img src="<?= htmlspecialchars($animal['image_path']) ?>" alt="<?= htmlspecialchars($animal['nom']) ?>" class="image-chimere">
+                        <h2 style="color: #c08b5c; margin-top: 15px;"><?= htmlspecialchars($animal['nom']) ?></h2>
+                        <span style="font-size: 11px; background: #8b5a2b; color: #1a110a; padding: 3px 10px; border-radius: 10px;"><?= htmlspecialchars($animal['categorie']) ?></span>
+                        <p style="font-style: italic; color: #d4af37; margin-top: 15px; font-size: 0.9em;">
+                            <?php 
+                                $desc = $animal['description'];
+                                echo htmlspecialchars((strlen($desc) > 100) ? substr($desc, 0, 100) . '...' : $desc);
+                            ?>
+                        </p>
+                    </div>
+                </a>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="font-size: 22px; font-weight: bold; color: #ffd700; border-top: 1px dashed #8b5a2b; padding-top: 10px; margin-bottom: 10px;">
+                        <?= htmlspecialchars($animal['prix']) ?> 🟡
+                    </p>
+                    
+                    <a href="details.php?id=<?= htmlspecialchars($animal['id']) ?>" class="btn-adopter">Détails techniques</a>
+
+                    <?php if(is_admin_connected()): ?>
+                        <div class="btn-delete-form">
+                            <a href="admin.php?modifier=<?= htmlspecialchars($animal['id']) ?>" style="color: #8b5a2b; font-size: 12px; text-decoration: none; display: block; margin-bottom: 5px;">⚙️ Ajuster</a>
+                            <form method="POST" action="delete.php" style="display: inline;">
+                                <?php csrf_input(); ?>
+                                <input type="hidden" name="id" value="<?= htmlspecialchars($animal['id']) ?>">
+                                <button type="submit" onclick="return confirm('Voulez-vous vraiment démonter cette chimère ?');">🗑️ Démonter</button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <p style="color: #ffd700; font-style: italic;">Aucune pièce mécanique ne correspond à cette recherche...</p>
+    <?php endif; ?>
+</div>
+
+</body>
+</html>
         }
     </style>
 </head>

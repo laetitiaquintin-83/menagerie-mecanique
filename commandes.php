@@ -1,13 +1,19 @@
 <?php 
 session_start();
-include 'connexion.php';
+require_once 'config.php';
+require_once 'helpers.php';
 
 // PROTECTION : Seule l'Inventrice peut lire son courrier
-if(!isset($_SESSION['admin'])) { header('Location: login.php'); exit(); }
+require_admin_connection();
 
 // On récupère toutes les commandes, les plus récentes en premier
-$req = $db->query("SELECT * FROM commandes_speciales ORDER BY date_demande DESC");
-$commandes = $req->fetchAll();
+try {
+    $req = $db->query("SELECT * FROM commandes_speciales ORDER BY date_demande DESC");
+    $commandes = $req->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('Erreur BD commandes: ' . $e->getMessage());
+    $commandes = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -70,9 +76,11 @@ $commandes = $req->fetchAll();
             
             <span class="budget">💰 Budget estimé : <?= $c['budget_estime'] ?> pièces d'or</span>
 
-            <a href="delete_commande.php?id=<?= $c['id'] ?>" 
-               onclick="return confirm('Voulez-vous vraiment archiver cette commande ?');" 
-               class="btn-delete">🗑️ Classer l'affaire</a>
+            <form method="POST" action="delete_commande.php" style="display:inline-block; margin-top: 15px;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generate_csrf_token()) ?>">
+                <input type="hidden" name="id" value="<?= htmlspecialchars($c['id']) ?>">
+                <button type="submit" class="btn-delete" onclick="return confirm('Voulez-vous vraiment archiver cette commande ?');">🗑️ Classer l'affaire</button>
+            </form>
         </div>
     <?php endforeach; ?>
 </div>

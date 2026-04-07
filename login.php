@@ -1,25 +1,59 @@
 <?php 
 session_start(); 
-include 'connexion.php';
+require_once 'config.php';
+require_once 'helpers.php';
 
-if(isset($_POST['connexion'])) {
-    $pseudo = $_POST['pseudo'];
-    $password = $_POST['password'];
+$error = null;
 
-    // 1. On cherche l'utilisateur par son nom
-    $check = $db->prepare("SELECT * FROM utilisateurs WHERE nom_utilisateur = ?");
-    $check->execute([$pseudo]);
-    $user = $check->fetch();
+// Si déjà connecté, rediriger
+if (is_admin_connected()) {
+    header('Location: index.php');
+    exit();
+}
 
-    // 2. Vérification du mot de passe haché
-    if($user && password_verify($password, $user['mot_de_passe'])) {
-        $_SESSION['admin'] = true;
-        // On stocke le nom pour l'affichage sur l'index
-        $_SESSION['nom_admin'] = $user['nom_utilisateur']; 
-        header('Location: index.php');
-        exit();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['connexion'])) {
+    // Vérifier CSRF
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = 'Requête invalide. Veuillez réessayer.';
     } else {
-        $erreur = "Accès refusé. Mécanisme bloqué.";
+        // Valider les champs
+        $pseudo = isset($_POST['pseudo']) ? trim($_POST['pseudo']) : null;
+        $password = isset($_POST['password']) ? $_POST['password'] : null;
+        
+        if (!$pseudo || !$password) {
+            $error = 'Tous les champs sont requis.';
+        } else {
+            try {
+                // Chercher l'utilisateur
+                $check = $db->prepare("SELECT * FROM utilisateurs WHERE nom_utilisateur = ?");
+                $check->execute([$pseudo]);
+                $user = $check->fetch(PDO::FETCH_ASSOC);
+                
+                // Vérifier le password
+                if ($user && password_verify($password, $user['mot_de_passe'])) {
+                    // Succès - régénérer ID de session pour éviter fixation
+                    session_regenerate_id(true);
+                    
+                    $_SESSION['admin'] = true;
+                    $_SESSION['nom_admin'] = $user['nom_utilisateur'];
+                    $_SESSION['login_time'] = time();
+                    
+                    // Logger la connexion
+                    error_log('Admin login: ' . $user['nom_utilisateur']);
+                    
+                    header('Location: index.php');
+                    exit();
+                } else {
+                    // Erreur générique pour prévenir l'enumération d'utilisateurs
+                    $error = 'Accès refusé. Mécanisme bloqué.';
+                    // Logger la tentative failed
+                    error_log('Failed login attempt for user: ' . htmlspecialchars($pseudo));
+                }
+            } catch (PDOException $e) {
+                error_log('Database error during login: ' . $e->getMessage());
+                $error = 'Une erreur est survenue. Veuillez réessayer.';
+            }
+        }
     }
 }
 ?>
@@ -59,7 +93,7 @@ if(isset($_POST['connexion'])) {
 
         .lock-box:hover { border-color: #ffd700; box-shadow: 0 0 60px rgba(212, 175, 55, 0.3); }
 
-        h2 { color:#ffd700; font-size: 1.2em; margin-bottom: 10px; letter-spacing: 3px; text-transform: uppercase; }
+        h2 { color: #ffd700; font-size: 1.2em; margin-bottom: 10px; letter-spacing: 3px; text-transform: uppercase; }
         
         input { 
             background: #1a110a; 
@@ -72,6 +106,7 @@ if(isset($_POST['connexion'])) {
             outline: none; 
             width: 180px;
             transition: 0.3s;
+            font-family: 'Georgia', serif;
         }
 
         input:focus { border-color: #ffd700; box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
@@ -91,7 +126,14 @@ if(isset($_POST['connexion'])) {
 
         button:hover { background: #ffd700; transform: scale(1.05); }
 
-        .error { color: #ff4444; font-size: 0.8em; position: absolute; bottom: 60px; font-style: italic; }
+        .error { 
+            color: #ff4444; 
+            font-size: 0.85em; 
+            text-align: center;
+            margin-bottom: 15px;
+            font-style: italic; 
+            max-width: 280px;
+        }
 
         .back-link {
             position: absolute;
@@ -108,16 +150,22 @@ if(isset($_POST['connexion'])) {
     <form method="POST" class="lock-box">
         <h2>IDENTIFICATION</h2>
         
-        <?php if(isset($erreur)): ?>
-            <p class="error"><?php echo $erreur; ?></p>
+        <?php if ($error): ?>
+            <p class="error"><?= htmlspecialchars($error) ?></p>
         <?php endif; ?>
         
-        <input type="text" name="pseudo" placeholder="Nom d'inventeur" required>
-        <input type="password" name="password" placeholder="Clé vapeur" required>
+        <?php csrf_input(); ?>
+        
+        <input type="text" name="pseudo" placeholder="Nom d'inventeur" required maxlength="50" autocomplete="username">
+        <input type="password" name="password" placeholder="Clé vapeur" required autocomplete="current-password">
         
         <button type="submit" name="connexion">DÉVERROUILLER</button>
 
         <a href="index.php" class="back-link">← Retourner à l'atelier</a>
+    </form>
+
+</body>
+</html>
     </form>
 
 </body>
