@@ -6,11 +6,36 @@ require_once 'helpers.php';
 // PROTECTION : Vérifier que l'admin est connecté
 require_admin_connection();
 
-// --- LOGIQUE D'AJOUT D'UNE CHIMÈRE ---
+// Récupérer l'ID de la créature à modifier
+if (!isset($_GET['id']) || !validate_positive_integer($_GET['id'])) {
+    header('Location: index.php');
+    exit();
+}
+
+$id = intval($_GET['id']);
+
+// Récupérer la créature
+try {
+    $req = $db->prepare("SELECT * FROM creatures WHERE id = ?");
+    $req->execute([$id]);
+    $creature = $req->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log('Erreur récupération créature: ' . $e->getMessage());
+    header('Location: index.php');
+    exit();
+}
+
+// Si la créature n'existe pas, rediriger
+if (!$creature) {
+    header('Location: index.php');
+    exit();
+}
+
+// --- LOGIQUE DE MODIFICATION ---
 $error = null;
 $success = false;
 
-if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier'])) {
     // Vérifier CSRF
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         $error = 'Requête invalide. Veuillez réessayer.';
@@ -19,9 +44,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
         $nom = isset($_POST['nom']) ? sanitize_text($_POST['nom'], 100) : null;
         $cat = isset($_POST['categorie']) ? sanitize_text($_POST['categorie']) : null;
         $prix = isset($_POST['prix']) ? intval($_POST['prix']) : null;
-        
-        // CORRECTION : On utilise trim() pour ne pas transformer les apostrophes en codes HTML en BD
-        // La sécurité SQL est assurée par la requête préparée ($ins->execute)
         $desc = isset($_POST['description']) ? trim($_POST['description']) : null;
         
         if (!$nom || !$cat || !$prix || !$desc) {
@@ -29,26 +51,34 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
         } elseif ($prix <= 0) {
             $error = 'Le prix doit être positif.';
         } else {
-            // Traiter l'upload
-            $image_path = handle_image_upload('image');
+            // Gérer le nouvel upload (optionnel)
+            $image_path = $creature['image_path'];
             
-            if ($image_path === null) {
-                $error = $_SESSION['upload_error'] ?? 'Erreur lors de l\'upload du fichier.';
-            } else {
+            if (!empty($_FILES['image']['name'])) {
+                // Uploader une nouvelle image
+                $new_path = handle_image_upload('image');
+                
+                if ($new_path === null) {
+                    $error = $_SESSION['upload_error'] ?? 'Erreur lors de l\'upload du fichier.';
+                } else {
+                    // Supprimer l'ancienne image
+                    delete_image_file($creature['image_path']);
+                    $image_path = $new_path;
+                }
+            }
+            
+            if (!$error) {
                 try {
-                    // Les paramètres (?) garantissent qu'aucune injection SQL n'est possible
-                    $ins = $db->prepare("INSERT INTO creatures (nom, categorie, prix, description, image_path) VALUES (?,?,?,?,?)");
-                    $ins->execute([$nom, $cat, $prix, $desc, $image_path]);
+                    // Mettre à jour la créature
+                    $upd = $db->prepare("UPDATE creatures SET nom = ?, categorie = ?, prix = ?, description = ?, image_path = ? WHERE id = ?");
+                    $upd->execute([$nom, $cat, $prix, $desc, $image_path, $id]);
                     
-                    $success = true;
-                    set_flash_message('Chimère créée avec succès !', 'success');
+                    set_flash_message('Chimère modifiée avec succès !', 'success');
                     header('Location: index.php');
                     exit();
                 } catch (PDOException $e) {
-                    error_log('Erreur création chimère: ' . $e->getMessage());
-                    $error = 'Erreur lors de la création. Veuillez réessayer.';
-                    // Supprimer l'image si la base de données a échoué
-                    delete_image_file($image_path);
+                    error_log('Erreur modification chimère: ' . $e->getMessage());
+                    $error = 'Erreur lors de la modification. Veuillez réessayer.';
                 }
             }
         }
@@ -60,7 +90,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Forge des Chimères</title>
+    <title>Modifier la Chimère - L'Atelier</title>
     <link rel="stylesheet" href="style.css">
     <style>
         body { 
@@ -106,7 +136,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
             font-size: 1.1em;
             border-radius: 3px;
         }
-        .btn-creer { 
+        .btn-modifier { 
             background: #2b1810; 
             color: #f4e4bc; 
             padding: 15px 30px; 
@@ -118,7 +148,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
             margin-top: 20px;
             width: auto;
         }
-        .btn-creer:hover { 
+        .btn-modifier:hover { 
             background: #8b5a2b; 
             letter-spacing: 2px; 
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -140,6 +170,12 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
             margin-bottom: 5px;
             display: block;
         }
+        .image-preview {
+            max-width: 200px;
+            margin: 15px 0;
+            border: 2px solid #8b5a2b;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -147,34 +183,39 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
     <div class="forge-container">
         <a href="index.php" class="link-back">← Retourner à l'Atelier</a>
         
-        <h1>⚒️ Registre de Création</h1>
+        <h1>⚙️ Reprendre une Chimère</h1>
         
-        <p style="font-style: italic; font-size: 0.9em;">Session de l'Inventrice : <strong><?= htmlspecialchars($_SESSION['nom_admin'] ?? 'Admin') ?></strong></p>
-
         <?php if ($error): ?>
             <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-
+        
         <form method="POST" enctype="multipart/form-data">
             <?php csrf_input(); ?>
             
-            <input type="text" name="nom" placeholder="Nom de la Chimère" required maxlength="100">
+            <label class="file-input-label">Nom de la chimère</label>
+            <input type="text" name="nom" value="<?= htmlspecialchars($creature['nom']) ?>" required>
             
+            <label class="file-input-label">Catégorie</label>
             <select name="categorie" required>
-                <option value="">-- Choisir une série --</option>
-                <option value="Explorateur">Série Explorateur</option>
-                <option value="Mécanicien">Série Mécanicien</option>
-                <option value="Colosse">Série Colosse</option>
+                <option value="Explorateur" <?= $creature['categorie'] === 'Explorateur' ? 'selected' : '' ?>>Explorateur</option>
+                <option value="Mécanicien" <?= $creature['categorie'] === 'Mécanicien' ? 'selected' : '' ?>>Mécanicien</option>
+                <option value="Colosse" <?= $creature['categorie'] === 'Colosse' ? 'selected' : '' ?>>Colosse</option>
+                <option value="Inclassable" <?= $creature['categorie'] === 'Inclassable' ? 'selected' : '' ?>>Inclassable</option>
             </select>
             
-            <input type="number" name="prix" placeholder="Valeur (Pièces d'or)" min="1" required>
+            <label class="file-input-label">Prix (pièces d'or)</label>
+            <input type="number" name="prix" value="<?= htmlspecialchars($creature['prix']) ?>" required>
             
-            <textarea name="description" rows="5" placeholder="Détails des engrenages et histoire..." required maxlength="5000"></textarea>
+            <label class="file-input-label">Description</label>
+            <textarea name="description" rows="6" required><?= htmlspecialchars($creature['description']) ?></textarea>
             
-            <label class="file-input-label">Schéma visuel (Image - Max 5MB) :</label>
-            <input type="file" name="image" accept="image/jpeg,image/png,image/gif,image/webp" required>
+            <label class="file-input-label">Image actuelle</label>
+            <img src="<?= htmlspecialchars($creature['image_path']) ?>" class="image-preview" alt="<?= htmlspecialchars($creature['nom']) ?>">
             
-            <button type="submit" name="ajouter" class="btn-creer">SCELLER LA CRÉATION</button>
+            <label class="file-input-label">Nouvelle image (optionnel)</label>
+            <input type="file" name="image" accept=".jpg,.jpeg,.png,.gif,.webp">
+            
+            <button type="submit" name="modifier" class="btn-modifier">💾 ENREGISTRER LES MODIFICATIONS</button>
         </form>
     </div>
 

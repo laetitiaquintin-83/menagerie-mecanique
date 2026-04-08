@@ -1,0 +1,1051 @@
+/* =====================================================
+   STYLE.CSS - Thème Steampunk Centralisé
+   L'Atelier des Chimères
+   ===================================================== */
+
+:root {
+    /* Couleurs */
+    --bg-dark: #1a110a;
+    --bg-light: #f4e4bc;
+    --text-gold: #d4af37;
+    --text-brown: #8b5a2b;
+    --text-dark-brown: #5d3a1a;
+    --text-light-brown: #2b1810;
+    --accent-gold: #ffd700;
+    --error-red: #ff4444;
+    
+    /* Curseur personnalisé - Clef à molette cuivrée */
+    --curseur-cle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><defs><linearGradient id='cuivre' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23d4a574;stop-opacity:1'/><stop offset='50%' style='stop-color:%23b89968;stop-opacity:1'/><stop offset='100%' style='stop-color:%238b5a2b;stop-opacity:1'/></linearGradient></defs><g><path d='M8 10c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.5-.8 2.8-2 3.4v10.6h-4V13.4c-1.2-.6-2-2-2-3.4z' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5'/><rect x='10' y='24' width='8' height='2' rx='1' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5'/><circle cx='12' cy='10' r='1.5' fill='%235d3a1a' opacity='0.4'/><path d='M20 16l8-4v2l-8 4v-2z' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5' opacity='0.8'/></g></svg>") 5 5;
+}
+
+/* ===== STYLES GLOBAUX ===== */
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-gold);
+    font-family: 'Georgia', serif;
+    line-height: 1.6;
+    cursor: var(--curseur-cle), auto !important;
+}
+
+a, button {
+    cursor: var(--curseur-cle), pointer !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    color: var(--text-gold);
+}
+
+/* ===== INDEX.PHP ===== */
+
+.engrenage {
+    position: fixed;
+    color: rgba(139, 90, 43, 0.1);
+    z-index: -1;
+    animation: rotation 40s linear infinite;
+    pointer-events: none;
+}
+
+.engrenage-1 {
+    top: -100px;
+    left: -100px;
+    font-size: 400px;
+}
+
+.engrenage-2 {
+    bottom: -120px;
+    right: -120px;
+    font-size: 500px;
+    animation-direction: reverse;
+}
+
+@keyframes rotation {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.enseigne {
+    background-image: url('images/enseigne.jpg');
+    background-size: cover;
+    border: 4px solid var(--text-brown);
+    border-radius: 15px;
+    padding: 60px 20px;
+    max-width: 80%;
+    margin: 20px auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.nav-container {
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-panier-nav {
+    background: var(--text-brown);
+    color: var(--accent-gold);
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    border: 1px solid var(--accent-gold);
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.btn-panier-nav:hover {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+}
+
+.nav-filtres {
+    text-align: center;
+}
+
+.nav-filtres a {
+    color: var(--accent-gold);
+    margin: 0 10px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.nav-filtres a:hover {
+    color: var(--text-light-brown);
+}
+
+.grille-creatures {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.carte-animal, .carte-speciale {
+    width: 30%;
+    min-width: 300px;
+    background-color: rgba(43, 24, 16, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid var(--text-brown);
+    transition: all 0.4s ease-in-out;
+    color: var(--bg-light);
+    cursor: pointer;
+}
+
+.carte-animal h2, .carte-speciale h2 {
+    color: var(--accent-gold);
+    margin: 10px 0;
+}
+
+.carte-animal:hover, .carte-speciale:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.4);
+    border-color: var(--accent-gold);
+    background-color: rgba(43, 24, 16, 1);
+}
+
+.image-container {
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    border: 2px solid var(--text-gold);
+    border-radius: 10px;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-chimere, .image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.prix-tag {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--accent-gold);
+    margin: 10px 0;
+}
+
+.btn-action {
+    padding: 8px 18px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    transition: 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-action:hover {
+    transform: scale(1.05);
+}
+
+/* ===== LOGIN.PHP ===== */
+
+.lock-box {
+    background: var(--text-light-brown);
+    padding: 40px;
+    border: 3px solid var(--text-brown);
+    border-radius: 50%;
+    width: 350px;
+    height: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 50px rgba(139, 90, 43, 0.4);
+    position: relative;
+    transition: 0.5s;
+}
+
+.lock-box:hover {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
+}
+
+.lock-box h2 {
+    color: var(--accent-gold);
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+.lock-box input {
+    background: var(--bg-dark);
+    border: 1px solid var(--text-brown);
+    color: var(--text-gold);
+    padding: 12px;
+    margin: 8px;
+    text-align: center;
+    border-radius: 5px;
+    outline: none;
+    width: 180px;
+    transition: 0.3s;
+    font-family: 'Georgia', serif;
+}
+
+.lock-box input:focus {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.lock-box button {
+    background: var(--text-brown);
+    color: var(--bg-dark);
+    border: none;
+    padding: 12px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+    margin-top: 15px;
+    letter-spacing: 1px;
+}
+
+.lock-box button:hover {
+    background: var(--accent-gold);
+    transform: scale(1.05);
+}
+
+.error {
+    color: var(--error-red);
+    font-size: 0.85em;
+    text-align: center;
+    margin-bottom: 15px;
+    font-style: italic;
+    max-width: 280px;
+}
+
+.back-link {
+    position: absolute;
+    bottom: -50px;
+    color: var(--text-brown);
+    text-decoration: none;
+    font-size: 0.8em;
+    transition: 0.3s;
+}
+
+.back-link:hover {
+    color: var(--accent-gold);
+}
+
+/* ===== ADMIN.PHP / EDIT.PHP ===== */
+
+.forge-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--bg-light);
+    padding: 40px;
+    border: 10px double var(--text-brown);
+    color: var(--text-light-brown);
+    box-shadow: 20px 20px 0px var(--text-dark-brown);
+}
+
+.forge-container h1 {
+    font-family: 'Courier New', Courier, monospace;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--text-light-brown);
+    padding-bottom: 10px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border-left: 4px solid;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+.forge-container input, 
+.forge-container textarea, 
+.forge-container select {
+    width: 90%;
+    padding: 12px;
+    margin: 12px 0;
+    background: rgba(139, 90, 43, 0.1);
+    border: 1px solid var(--text-brown);
+    font-family: 'Georgia', serif;
+    font-size: 1.1em;
+    border-radius: 3px;
+}
+
+.btn-creer, .btn-modifier {
+    background: var(--text-light-brown);
+    color: var(--bg-light);
+    padding: 15px 30px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+    transition: 0.3s;
+    margin-top: 20px;
+    width: auto;
+    border-radius: 5px;
+}
+
+.btn-creer:hover, .btn-modifier:hover {
+    background: var(--text-brown);
+    letter-spacing: 2px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.link-back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--text-brown);
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.link-back:hover {
+    color: var(--text-light-brown);
+}
+
+.file-input-label {
+    text-align: left;
+    width: 90%;
+    margin: 0 auto;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.image-preview {
+    max-width: 200px;
+    margin: 15px 0;
+    border: 2px solid var(--text-brown);
+    border-radius: 5px;
+}
+
+/* ===== COMMANDES.PHP ===== */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    background: var(--text-light-brown);
+    color: var(--text-brown);
+    border: 2px solid var(--text-brown);
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.tab-btn.active {
+    background: var(--text-brown);
+    color: var(--bg-light);
+}
+
+.tab-btn:hover {
+    background: var(--text-brown);
+    color: var(--bg-light);
+}
+
+.section-commande {
+    display: none;
+}
+
+.section-commande.active {
+    display: block;
+}
+
+.lettre {
+    background: var(--bg-light);
+    color: var(--text-light-brown);
+    padding: 25px;
+    margin-bottom: 20px;
+    border: 2px solid var(--text-brown);
+    border-radius: 10px;
+}
+
+.table-boutique {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(43, 24, 16, 0.8);
+}
+
+.table-boutique th, .table-boutique td {
+    padding: 15px;
+    border: 1px solid var(--text-brown);
+    text-align: left;
+}
+
+.table-boutique th {
+    background: var(--text-dark-brown);
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+.btn-archiver {
+    background: var(--text-brown);
+    color: var(--bg-light);
+    padding: 8px 15px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-archiver:hover {
+    background: var(--text-dark-brown);
+}
+
+.actions-row {
+    margin-top: 15px;
+}
+
+/* ===== PANIER.PHP ===== */
+
+.panier-container {
+    max-width: 800px;
+    margin: 50px auto;
+    background: rgba(43, 24, 16, 0.9);
+    padding: 30px;
+    border: 2px solid var(--text-brown);
+    border-radius: 15px;
+}
+
+.panier-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.panier-container th {
+    border-bottom: 2px solid var(--text-brown);
+    padding: 10px;
+}
+
+.panier-container td {
+    padding: 15px;
+    border-bottom: 1px solid #3d261a;
+}
+
+.btn-payer {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.2em;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+.btn-payer:hover {
+    background: var(--text-brown);
+    color: var(--bg-light);
+    transform: scale(1.05);
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border-left: 4px solid #f5c6cb;
+}
+
+.form-client {
+    background: rgba(139, 90, 43, 0.2);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+}
+
+.form-client input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background: var(--bg-dark);
+    border: 1px solid var(--text-brown);
+    color: var(--accent-gold);
+    border-radius: 3px;
+    box-sizing: border-box;
+    font-family: 'Georgia', serif;
+}
+
+.form-client label {
+    text-align: left;
+    display: block;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* ===== PAIEMENT.PHP ===== */
+
+.card-paiement {
+    background: var(--text-light-brown);
+    padding: 40px;
+    border: 3px double var(--accent-gold);
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.card-paiement input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    background: var(--bg-dark);
+    border: 1px solid var(--text-brown);
+    color: var(--accent-gold);
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.btn-final {
+    background: linear-gradient(to bottom, var(--text-brown), var(--text-dark-brown));
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.btn-final:hover {
+    transform: scale(1.05);
+}
+
+/* ===== CONFIRMATION.PHP ===== */
+
+.success-box {
+    max-width: 600px;
+    margin: 50px auto;
+    border: 2px solid var(--accent-gold);
+    padding: 40px;
+    background: rgba(43, 24, 16, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+}
+
+.stamp {
+    font-size: 80px;
+    margin-bottom: 20px;
+    filter: sepia(1) saturate(2);
+}
+
+.success-box h1 {
+    color: var(--accent-gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.success-box p {
+    font-size: 1.2em;
+    line-height: 1.6;
+    color: var(--bg-light);
+}
+
+.btn-home {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 25px;
+    background: var(--text-brown);
+    color: var(--accent-gold);
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    border: 1px solid var(--accent-gold);
+    transition: 0.3s;
+}
+
+.btn-home:hover {
+    background: var(--accent-gold);
+    color: var(--bg-dark);
+}
+
+/* ===== DETAILS.PHP ===== */
+
+.fiche-technique {
+    max-width: 900px;
+    margin: 40px auto;
+    background: rgba(43, 24, 16, 0.9);
+    border: 5px double var(--text-brown);
+    padding: 40px;
+    border-radius: 5px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.9);
+    position: relative;
+    padding-top: 20px;
+}
+
+.fiche-technique h1 {
+    color: var(--accent-gold);
+    font-size: 2.5em;
+    border-bottom: 2px solid var(--text-brown);
+    padding-bottom: 10px;
+}
+
+.fiche-technique .image-container {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.fiche-technique img {
+    max-width: 100%;
+    border: 3px solid var(--accent-gold);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+}
+
+.badge-cat {
+    background: var(--text-brown);
+    color: var(--bg-dark);
+    display: inline-block;
+    padding: 8px 25px;
+    border-radius: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.histoire {
+    font-size: 1.3em;
+    line-height: 1.6;
+    text-align: justify;
+    font-style: italic;
+    background: rgba(0,0,0,0.3);
+    padding: 25px;
+    border-left: 4px solid var(--accent-gold);
+    color: var(--bg-light);
+    margin: 20px 0;
+}
+
+.prix-label {
+    font-size: 2.5em;
+    color: var(--accent-gold);
+    margin-top: 40px;
+}
+
+.btn-retour {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--text-brown);
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-retour:hover {
+    color: var(--accent-gold);
+    transform: translateX(-5px);
+}
+
+.btn-panier {
+    display: inline-block;
+    margin-top: 20px;
+    background: linear-gradient(135deg, var(--accent-gold) 0%, #b8860b 100%);
+    color: var(--bg-dark);
+    padding: 18px 35px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-radius: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: 0.3s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-panier:hover {
+    transform: scale(1.05) translateY(-3px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    filter: brightness(1.1);
+}
+
+/* ===== CONTACT.PHP ===== */
+
+.form-container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: var(--bg-light);
+    padding: 40px;
+    border: 5px solid var(--text-brown);
+    color: var(--text-light-brown);
+    box-shadow: 10px 10px 0px var(--text-dark-brown);
+}
+
+.form-container h1 {
+    border-bottom: 2px solid var(--text-light-brown);
+    text-align: center;
+}
+
+.form-container input, 
+.form-container textarea, 
+.form-container select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid var(--text-brown);
+    background: rgba(255,255,255,0.5);
+    box-sizing: border-box;
+    font-family: 'Georgia', serif;
+    border-radius: 3px;
+}
+
+.btn-envoyer {
+    background: var(--text-light-brown);
+    color: var(--bg-light);
+    border: none;
+    padding: 15px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+    border-radius: 3px;
+}
+
+.btn-envoyer:hover {
+    background: var(--text-brown);
+}
+
+.form-container .back-link {
+    color: var(--text-gold);
+    text-decoration: none;
+    display: block;
+    margin-bottom: 20px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media (max-width: 1200px) {
+    .grille-creatures {
+        max-width: 100%;
+    }
+    
+    .carte-animal, .carte-speciale {
+        width: calc(50% - 12.5px);
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Généralités */
+    body {
+        padding: 0;
+    }
+    
+    .container {
+        padding: 15px;
+    }
+    
+    /* Header */
+    .enseigne {
+        padding: 30px 15px;
+        max-width: 95%;
+        margin: 15px auto;
+    }
+    
+    .nav-container {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-panier-nav {
+        width: 90%;
+        text-align: center;
+    }
+    
+    /* Grille creatures */
+    .grille-creatures {
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    .carte-animal, .carte-speciale {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .image-container {
+        height: 250px;
+    }
+    
+    /* Formulaires */
+    .forge-container, .form-container {
+        max-width: 95%;
+        padding: 20px;
+        box-shadow: none;
+        border-width: 2px;
+    }
+    
+    .forge-container input, 
+    .forge-container textarea, 
+    .forge-container select,
+    .form-container input, 
+    .form-container textarea, 
+    .form-container select {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+    }
+    
+    /* Login */
+    .lock-box {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        border-radius: 10px;
+    }
+    
+    .lock-box input {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    /* Panier */
+    .panier-container {
+        max-width: 95%;
+        margin: 20px auto;
+        padding: 15px;
+    }
+    
+    .panier-container table {
+        font-size: 0.9em;
+    }
+    
+    .panier-container th,
+    .panier-container td {
+        padding: 8px;
+    }
+    
+    /* Paiement */
+    .card-paiement {
+        width: 95%;
+        max-width: 400px;
+        padding: 20px;
+    }
+    
+    /* Commandes */
+    .tabs {
+        gap: 5px;
+    }
+    
+    .tab-btn {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+    
+    .lettre {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .table-boutique th, 
+    .table-boutique td {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+    
+    /* Details page */
+    .fiche-technique {
+        padding: 20px;
+        border-width: 2px;
+    }
+    
+    .fiche-technique h1 {
+        font-size: 2em;
+    }
+    
+    .badge-cat {
+        font-size: 0.9em;
+        padding: 5px 15px;
+    }
+    
+    .histoire {
+        font-size: 1.1em;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 0.95em;
+    }
+    
+    h1 {
+        font-size: 1.5em;
+    }
+    
+    h2 {
+        font-size: 1.3em;
+    }
+    
+    /* Actions en grille */
+    .carte-animal, .carte-speciale {
+        padding: 10px;
+    }
+    
+    .prix-tag {
+        font-size: 20px;
+    }
+    
+    .image-container {
+        height: 200px;
+    }
+    
+    /* Lock box */
+    .lock-box {
+        width: 90%;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    
+    /* Buttons */
+    .btn-action {
+        padding: 6px 12px;
+        font-size: 0.9em;
+    }
+    
+    .btn-payer, .btn-final {
+        font-size: 1em;
+        padding: 12px 20px;
+    }
+    
+    /* Paiement cards */
+    .card-paiement {
+        width: 100%;
+        padding: 15px;
+    }
+    
+    .panier-container {
+        padding: 15px;
+    }
+    
+    .fiche-technique {
+        padding: 15px;
+    }
+    
+    .fiche-technique h1 {
+        font-size: 1.5em;
+    }
+    
+    .tab-btn {
+        padding: 6px 10px;
+        font-size: 0.85em;
+    }
+}
+
+/* ===== UTILITAIRES ===== */
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== ANIMATIONS ===== */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}

@@ -29,13 +29,10 @@ if (!$animal) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapport : <?= htmlspecialchars($animal['nom']) ?></title>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap" rel="stylesheet">
     <style>
         /* --- CURSEUR ET STYLE GLOBAL --- */
-        :root {
-            --curseur-cle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path fill='%23b87333' stroke='%235d3a1a' stroke-width='1' d='M10 4C6.7 4 4 6.7 4 10c0 2.5 1.5 4.6 3.7 5.5L4 28l3 3 12.5-3.7c.9 2.2 3 3.7 5.5 3.7 3.3 0 6-2.7 6-6s-2.7-6-6-6c-1.5 0-2.8.5-3.8 1.4L15.5 14c2.2-.9 3.7-3 3.7-5.5 0-3.3-2.7-6-6-6zm0 3c1.7 0 3 1.3 3 3s-1.3 3-3 3-3-1.3-3-3 1.3-3 3-3z'/></svg>") 5 5;
-        }
-
         body { 
             background-color: #1a110a; 
             background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
@@ -138,7 +135,7 @@ if (!$animal) {
         
         <p style="text-align:right; font-family: 'Special Elite'; opacity: 0.6; margin: 0;">DOSSIER REF-<?= htmlspecialchars($animal['id']) ?>-B</p>
         
-        <h1>PROTOCOLE : <?= html_entity_decode(htmlspecialchars(strtoupper($animal['nom']))) ?></h1>
+        <h1>PROTOCOLE : <?= html_entity_decode(htmlspecialchars(strtoupper($animal['nom']), ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?></h1>
         
         <div class="image-container">
             <img src="<?= htmlspecialchars($animal['image_path']) ?>" alt="<?= htmlspecialchars($animal['nom']) ?>">
@@ -158,6 +155,16 @@ if (!$animal) {
             <a href="ajouter_panier.php?id=<?= $animal['id'] ?>&nom=<?= urlencode($animal['nom']) ?>&prix=<?= $animal['prix'] ?>" class="btn-panier">
                 📥 AJOUTER À MON INVENTAIRE (PANIER)
             </a>
+            
+            <?php if(is_admin_connected()): ?>
+            <form method="POST" action="delete.php" style="display:inline; margin-left: 15px;">
+                <?php csrf_input(); ?>
+                <input type="hidden" name="id" value="<?= $animal['id'] ?>">
+                <button type="submit" class="btn-panier" style="background: #ff4444; cursor: pointer;" onclick="return confirm('⚠️ Supprimer cette chimère définitivement ?')">
+                    🗑️ SUPPRIMER CETTE CHIMÈRE
+                </button>
+            </form>
+            <?php endif; ?>
         </div>
 
         <hr style="border: 0; border-top: 1px dashed #8b5a2b; margin: 40px 0;">

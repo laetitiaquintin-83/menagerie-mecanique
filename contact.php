@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Commandes Spéciales - L'Atelier</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body { background: #1a110a; color: #d4af37; font-family: 'Georgia', serif; padding: 50px; }
         .form-container { 
