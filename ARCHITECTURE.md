@@ -49,6 +49,7 @@
 **Rôle** : Initialiser tout ce qui est nécessaire
 
 **Contient** :
+
 ```php
 // 1. Constantes (immuables, globales)
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
@@ -63,12 +64,14 @@ PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION;
 ```
 
 **Avantages** :
+
 - ✅ Une source de vérité
 - ✅ Facile à modifier
 - ✅ Sécurité centralisée
 - ✅ Performances (constantes = plus rapide que variables)
 
 **Exemple d'utilisation** :
+
 ```php
 <?php
 // N'importe quel fichier
@@ -89,43 +92,54 @@ $db->query(...);       // ✅ Connexion BD existe
 **5 catégories de fonctions** :
 
 #### A. VÉRIFICATION DE SESSION
+
 ```php
 require_admin_connection(); // Redirect si pas admin
 is_admin_connected();       // Retourne bool
 ```
+
 **Avantage** : Éviter de répéter la vérification dans chaque page
 
 #### B. PROTECTION CSRF
+
 ```php
 generate_csrf_token();      // Crée token aléatoire stocké en session
 verify_csrf_token($token);  // Vérifie token valide + passé expiration
 csrf_input();               // Affiche <input hidden> avec token
 ```
+
 **Avantage** : Protection contre attaques cross-site dans formulaires
 
 #### C. VALIDATION
+
 ```php
 sanitize_text($text, 100);  // Nettoie + limite longueur
 validate_email($email);     // Valide format email
 validate_positive_integer($id); // Vérifie nombre positif
 ```
+
 **Avantage** : Données sûres avant d'utiliser en BD
 
 #### D. UPLOADS
+
 ```php
 handle_image_upload('image');  // Upload avec 7 vérifications
 delete_image_file($path);      // Supprime en toute sécurité
 ```
+
 **Avantage** : Upload robuste et sécurisé
 
 #### E. MESSAGES FLASH
+
 ```php
 show_flash_and_clear();    // Récupère message une fois
 set_flash_message($msg);   // Stocke pour affichage suivant
 ```
+
 **Avantage** : Messages temporaires sans disruption
 
 **Exemple complet** :
+
 ```php
 <?php
 require_once 'config.php';
@@ -185,7 +199,8 @@ $flash = show_flash_and_clear();
 </html>
 ```
 
-**5 du pattern**  :
+**5 du pattern** :
+
 1. Initialiser
 2. Vérifier accès
 3. Logique métier (POST handling)
@@ -315,7 +330,7 @@ SELECT * FROM creatures ORDER BY date_creation DESC;
 SELECT * FROM creatures WHERE nom LIKE '%robot%';
 
 -- Créer une créature
-INSERT INTO creatures (nom, categorie, prix, description, image_path) 
+INSERT INTO creatures (nom, categorie, prix, description, image_path)
 VALUES (?, ?, ?, ?, ?);
 
 -- Supprimer une créature
@@ -408,18 +423,18 @@ DOSSIERS
 
 ## 🎯 Bonnes pratiques appliquées
 
-| Pratique | Exemple dans le code | Avantage |
-|----------|----------------------|----------|
-| **DRY** (Don't Repeat Yourself) | helpers.php regroupe fonctions | Pas de duplication |
-| **Séparation responsabilités** | config.php ≠ pages métier | Code plus lisible |
-| **Prepared statements** (PDO) | `$db->prepare()->execute()` | SQL injection impossible |
-| **Validation entrée** | `validate_email()` | Données cohérentes |
-| **Escaping sortie** | `htmlspecialchars()` | XSS impossible |
-| **Token CSRF** | `csrf_input()` + `verify_csrf_token()` | Formulaires safe |
-| **Gestion erreurs** | try/catch autour BD | Pas d'exposition infos |
-| **Logging** | `error_log()` | Audit et debug |
-| **Constantes** | `define('MAX_...')` | Plus rapide + safe |
-| **Messages flash** | `set_flash_message()` | UX fluide |
+| Pratique                        | Exemple dans le code                   | Avantage                 |
+| ------------------------------- | -------------------------------------- | ------------------------ |
+| **DRY** (Don't Repeat Yourself) | helpers.php regroupe fonctions         | Pas de duplication       |
+| **Séparation responsabilités**  | config.php ≠ pages métier              | Code plus lisible        |
+| **Prepared statements** (PDO)   | `$db->prepare()->execute()`            | SQL injection impossible |
+| **Validation entrée**           | `validate_email()`                     | Données cohérentes       |
+| **Escaping sortie**             | `htmlspecialchars()`                   | XSS impossible           |
+| **Token CSRF**                  | `csrf_input()` + `verify_csrf_token()` | Formulaires safe         |
+| **Gestion erreurs**             | try/catch autour BD                    | Pas d'exposition infos   |
+| **Logging**                     | `error_log()`                          | Audit et debug           |
+| **Constantes**                  | `define('MAX_...')`                    | Plus rapide + safe       |
+| **Messages flash**              | `set_flash_message()`                  | UX fluide                |
 
 ---
 
@@ -443,6 +458,7 @@ Pouvoir expliquer :
 ## 💡 Exemples clés à retenir
 
 ### Exemple 1 : Comment fonctionne PDO
+
 ```php
 // Avant (vulnérable)
 $query = "SELECT * FROM users WHERE email = '" . $email . "'";
@@ -458,6 +474,7 @@ $stmt->execute([$email]);
 ```
 
 ### Exemple 2 : Comment fonctionne CSRF token
+
 ```php
 // 1. Page affiche formulaire
 <?php csrf_input(); ?>  // Affiche: <input name="csrf_token" value="a1b2c3...">
@@ -473,6 +490,7 @@ if (!verify_csrf_token($_POST['csrf_token'])) {
 ```
 
 ### Exemple 3 : Comment fonctionne messages flash
+
 ```php
 // Page 1 : set_flash_message
 set_flash_message("Succès !", "success");
@@ -496,7 +514,8 @@ $flash = show_flash_and_clear(); // $flash['message'] == null (déjà affichée)
 
 **À pouvoir expliquer en 2-3 minutes** :
 
-> "Mon app utilise une architecture en couches : 
+> "Mon app utilise une architecture en couches :
+>
 > - config.php centralise configuration et connexion BD
 > - helpers.php regroupe les fonctions réutilisables
 > - Chaque page métier suit le même pattern : initialiser → valider → traiter → afficher

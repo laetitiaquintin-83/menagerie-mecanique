@@ -3,6 +3,11 @@ session_start();
 require_once 'config.php';
 require_once 'helpers.php';
 
+// Initialiser le panier s'il n'existe pas pour éviter les erreurs de compte
+if (!isset($_SESSION['panier'])) {
+    $_SESSION['panier'] = [];
+}
+
 // --- LOGIQUE DE RECHERCHE ET FILTRE ---
 $filtre = isset($_GET['cat']) ? sanitize_text($_GET['cat']) : 'tous';
 $recherche = isset($_GET['recherche']) ? sanitize_text($_GET['recherche']) : '';
@@ -23,7 +28,6 @@ try {
     $toutes_les_creatures = [];
 }
 
-// Récupérer les messages flash
 $flash = show_flash_and_clear();
 ?>
 <!DOCTYPE html>
@@ -33,466 +37,229 @@ $flash = show_flash_and_clear();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>L'Atelier des Chimères</title>
     <style>
-        /* --- STYLE GÉNÉRAL --- */
+        /* --- LE CURSEUR "CLÉ DE CUIVRE" --- */
+        :root {
+            --curseur-cle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path fill='%23b87333' stroke='%235d3a1a' stroke-width='1' d='M10 4C6.7 4 4 6.7 4 10c0 2.5 1.5 4.6 3.7 5.5L4 28l3 3 12.5-3.7c.9 2.2 3 3.7 5.5 3.7 3.3 0 6-2.7 6-6s-2.7-6-6-6c-1.5 0-2.8.5-3.8 1.4L15.5 14c2.2-.9 3.7-3 3.7-5.5 0-3.3-2.7-6-6-6zm0 3c1.7 0 3 1.3 3 3s-1.3 3-3 3-3-1.3-3-3 1.3-3 3-3z'/></svg>") 5 5;
+        }
+
         body { 
             background-color: #1a110a; 
             color: #d4af37; 
             text-align: center; 
             font-family: 'Georgia', serif; 
-            margin: 0; 
-            padding: 0; 
+            margin: 0; padding: 0; 
             overflow-x: hidden;
+            cursor: var(--curseur-cle), auto !important;
+            position: relative;
+        }
+
+        a, button, .carte-animal, .carte-speciale, #ascenseur, input, select {
+            cursor: var(--curseur-cle), pointer !important;
         }
         
-        /* --- MESSAGES FLASH --- */
-        .flash-message {
-            margin: 20px auto;
-            max-width: 600px;
-            padding: 15px;
-            border-radius: 5px;
-            border-left: 4px solid;
+        /* --- LES ENGRENAGES --- */
+        .engrenage { 
+            position: fixed; 
+            color: rgba(139, 90, 43, 0.1); 
+            z-index: -1; 
+            animation: rotation 40s linear infinite; 
+            user-select: none; 
+            pointer-events: none; 
         }
-        .flash-success {
-            background: rgba(212, 237, 218, 0.1);
-            border-color: #155724;
-            color: #7dd17d;
-        }
-        .flash-error {
-            background: rgba(248, 215, 218, 0.1);
-            border-color: #721c24;
-            color: #ff6b6b;
-        }
-        
-        /* --- LE SÉSAME (LOGIN/LOGOUT) --- */
-        .auth-zone {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 0.8em;
-            z-index: 1000;
-        }
-        .auth-zone a {
-            color: #8b5a2b;
-            text-decoration: none;
-            border: 1px solid #8b5a2b;
-            padding: 5px 12px;
-            border-radius: 5px;
-            transition: 0.3s;
-        }
-        .auth-zone a:hover {
-            color: #ffd700;
-            border-color: #ffd700;
-            background: rgba(139, 90, 43, 0.1);
-        }
-        .logout-link { color: #ff4444 !important; border-color: #ff4444 !important; }
+        .engrenage-1 { top: -100px; left: -100px; font-size: 400px; }
+        .engrenage-2 { bottom: -120px; right: -120px; font-size: 500px; animation-direction: reverse; animation-duration: 60s; }
+        .engrenage-3 { top: 40%; left: -50px; font-size: 200px; opacity: 0.05; }
 
-        /* --- BANDEAU ADMIN / COURRIER --- */
-        .admin-bar {
-            background: linear-gradient(to right, #8b5a2b, #2b1810); 
-            padding: 15px; 
-            text-align: center; 
-            border-bottom: 2px solid #ffd700; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
+        @keyframes rotation { 
+            from { transform: rotate(0deg); } 
+            to { transform: rotate(360deg); } 
         }
 
-        /* --- ANIMATION DES ENGRENAGES DE FOND --- */
-        .engrenage {
-            position: fixed;
-            color: rgba(139, 90, 43, 0.15);
-            z-index: -1;
-            user-select: none;
-            animation: rotation 30s linear infinite;
-        }
-        .engrenage-1 { top: -80px; left: -80px; font-size: 300px; }
-        .engrenage-2 { bottom: -100px; right: -100px; font-size: 400px; animation-direction: reverse; }
-
-        @keyframes rotation {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* --- L'ENSEIGNE --- */
-        .enseigne {
+        /* --- ENSEIGNE --- */
+        .enseigne { 
             background-image: url('images/enseigne.jpg'); 
             background-size: cover; 
             border: 4px solid #8b5a2b; 
             border-radius: 15px; 
             padding: 60px 20px; 
             max-width: 80%; 
-            margin: 20px auto;
+            margin: 20px auto; 
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5); 
             position: relative;
+            z-index: 10;
+        }
+        .enseigne h1 { color: #ffd700 !important; font-size: 46px; text-shadow: 3px 3px 6px rgba(0,0,0,0.9); margin: 0; letter-spacing: 2px; }
+
+        /* --- NAVIGATION & PANIER --- */
+        .nav-container {
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
-        .enseigne h1 { 
-            color: #ffd700 !important; 
-            font-size: 46px; 
-            margin: 0; 
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.9), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-        }
-
-        .enseigne p { 
-            color: #ffffff !important; 
-            font-size: 20px; 
-            font-weight: bold;
-            text-shadow: 2px 2px 4px #000;
-        }
-
-        /* --- BARRE DE RECHERCHE --- */
-        .search-bar { margin-bottom: 20px; }
-        .search-bar input {
-            background: rgba(43, 24, 16, 0.8);
-            border: 1px solid #8b5a2b;
-            color: #ffd700;
-            padding: 10px;
-            border-radius: 20px;
-            width: 250px;
-            outline: none;
-        }
-        .search-bar button {
+        .btn-panier-nav {
             background: #8b5a2b;
-            color: #1a110a;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
+            color: #ffd700;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
             font-weight: bold;
-            margin-left: -40px;
+            border: 1px solid #ffd700;
+            transition: 0.3s;
         }
-
-        /* --- NAVIGATION --- */
-        .nav-filtres a {
-            color: #ffd700; 
-            margin: 0 10px; 
-            text-decoration: none; 
-            font-weight: bold;
-        }
-        .nav-filtres a:hover { border-bottom: 2px solid #ffd700; }
+        .btn-panier-nav:hover { background: #ffd700; color: #1a110a; }
 
         /* --- GRILLE ET CARTES --- */
-        .grille-creatures {
-            display: flex; 
-            justify-content: center; 
-            gap: 25px; 
-            flex-wrap: wrap; 
-            max-width: 1200px; 
-            margin: 0 auto;
-            padding: 20px;
+        .grille-creatures { 
+            display: flex; justify-content: center; gap: 25px; flex-wrap: wrap; 
+            max-width: 1200px; margin: 0 auto; padding: 20px; 
+            position: relative; z-index: 5;
+        }
+        
+        .carte-animal, .carte-speciale { 
+            width: 30%; min-width: 300px; background-color: rgba(43, 24, 16, 0.95); 
+            padding: 20px; border-radius: 15px; border: 1px solid #8b5a2b; 
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; overflow: hidden;
         }
 
-        .carte-animal {
-            width: 30%; 
-            min-width: 300px; 
-            background-color: rgba(43, 24, 16, 0.7); 
-            padding: 20px; 
-            border-radius: 15px; 
-            border: 1px solid #8b5a2b; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between;
-            transition: 0.3s;
-            backdrop-filter: blur(3px);
+        .carte-speciale { border: 2px dashed #ffd700; background: linear-gradient(135deg, rgba(43, 24, 16, 0.95) 0%, rgba(80, 50, 30, 0.95) 100%); }
+
+        .carte-animal:hover, .carte-speciale:hover { 
+            border-color: #ffd700; transform: translateY(-10px); 
+            box-shadow: 0 15px 35px rgba(212, 175, 55, 0.3);
         }
 
-        .image-chimere { 
-            width: 100% !important; 
-            height: 300px !important; 
-            object-fit: cover !important; 
-            border: 3px solid #d4af37; 
-            border-radius: 10px; 
-            transition: transform 0.5s ease;
-        }
+        .image-container { width: 100%; height: 300px; overflow: hidden; border: 2px solid #d4af37; border-radius: 10px; background: #000; }
+        .image-chimere { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+        .carte-animal:hover .image-chimere { transform: scale(1.1); }
 
-        .carte-animal:hover { transform: translateY(-5px); border-color: #ffd700; }
-        .carte-animal:hover .image-chimere { transform: rotate(2deg) scale(1.05); }
+        .carte-animal h2, .carte-speciale h2 { color: #ffd700; margin-top: 15px; font-size: 1.6em; }
+        .description-text { font-style: normal; font-size: 0.95em; color: #f4e4bc; line-height: 1.4; margin: 15px 0; height: 65px; overflow: hidden; }
+        .prix-tag { font-size: 24px; font-weight: bold; color: #ffd700; margin: 10px 0; }
 
         /* --- BOUTONS --- */
-        .btn-adopter { 
-            background-color: #c08b5c; color: #2b1810; padding: 10px 25px; 
-            font-weight: bold; border-radius: 5px; display: inline-block; 
-            transition: 0.3s; text-decoration: none; margin-top: 10px;
-        }
-        .btn-adopter:hover { background-color: #8b5a2b !important; color: #ffd700 !important; transform: scale(1.1); }
+        .btn-action { transition: all 0.3s ease; display: inline-block; font-weight: bold; border: none; text-decoration: none; cursor: pointer; }
+        .btn-action:hover { filter: brightness(1.3); transform: scale(1.05); }
 
-        .btn-forge {
-            background: #2b1810; color: #8b5a2b; padding: 12px 25px; 
-            border: 2px dashed #8b5a2b; text-decoration: none; 
-            border-radius: 5px; font-weight: bold; display: inline-block;
-        }
-        
-        .btn-delete-form {
-            margin-top: 15px;
-            border-top: 1px solid rgba(139, 90, 43, 0.2);
-            padding-top: 10px;
-        }
-        
-        .btn-delete-form button {
-            background: none;
-            border: none;
-            color: #ff4444;
-            font-size: 11px;
-            cursor: pointer;
-            text-decoration: none;
-            padding: 0;
-        }
-        
-        .btn-delete-form button:hover {
-            text-decoration: underline;
-        }
+        .nav-filtres a { color: #ffd700; margin: 0 10px; text-decoration: none; font-weight: bold; border-bottom: 1px solid transparent; transition: 0.3s; }
+        .nav-filtres a:hover { border-bottom: 1px solid #ffd700; }
 
-        /* --- RESPONSIVE --- */
-        @media (max-width: 1024px) { .carte-animal { width: 45%; } }
-        @media (max-width: 768px) {
-            .engrenage { display: none; }
-            .enseigne h1 { font-size: 32px !important; }
-            .carte-animal { width: 95% !important; }
-        }
+        #ascenseur { display: none; position: fixed; bottom: 20px; right: 30px; border: 2px solid #8b5a2b; background: #2b1810; color: #ffd700; padding: 15px; border-radius: 50%; z-index: 100; }
+
+        @media (max-width: 768px) { .carte-animal, .carte-speciale { width: 95% !important; } }
     </style>
 </head>
 <body>
 
-<div class="auth-zone">
-    <?php if(is_admin_connected()): ?>
-        <a href="logout.php" class="logout-link">🗝️ Déconnexion</a>
-    <?php else: ?>
-        <a href="login.php">🗝️ Accès</a>
-    <?php endif; ?>
-</div>
-
-<?php if(is_admin_connected()): ?>
-    <div class="admin-bar">
-        <a href="commandes.php" style="color: #f4e4bc; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
-            📜 CONSULTER LE COURRIER DES COMMANDES
-        </a>
-    </div>
-<?php endif; ?>
-
-<?php if ($flash['message']): ?>
-    <div class="flash-message flash-<?= $flash['type'] ?>">
-        <?= htmlspecialchars($flash['message']) ?>
-    </div>
-<?php endif; ?>
-
 <div class="engrenage engrenage-1">⚙️</div>
 <div class="engrenage engrenage-2">⚙️</div>
+<div class="engrenage engrenage-3">⚙️</div>
+
+<div class="auth-zone" style="position: absolute; top: 15px; right: 20px; z-index: 100;">
+    <?php if(is_admin_connected()): ?>
+        <a href="logout.php" style="color:#ff4444; border: 1px solid #ff4444; text-decoration:none; padding:5px 10px; border-radius:5px;">🗝️ Déconnexion</a>
+    <?php else: ?>
+        <a href="login.php" style="color:#8b5a2b; border: 1px solid #8b5a2b; text-decoration:none; padding:5px 10px; border-radius:5px;">🗝️ Accès</a>
+    <?php endif; ?>
+</div>
 
 <div class="enseigne">
     <h1>L'ATELIER DES CHIMÈRES</h1>
     <p>La ménagerie mécanique...</p>
 </div>
 
-<?php if(isset($_SESSION['nom_admin'])): ?>
-    <div style="margin-bottom: 30px;">
-        <p style="color: #ffd700; font-style: italic;">
-            ⚙️ Bienvenue, Maîtresse <strong><?= htmlspecialchars($_SESSION['nom_admin']) ?></strong>.
-        </p>
+<div class="nav-container">
+    <a href="panier.php" class="btn-panier-nav">
+        🛒 MON INVENTAIRE (<?= count($_SESSION['panier']) ?>)
+    </a>
+
+    <div class="nav-filtres">
+        <a href="index.php?cat=tous">Tous</a>
+        <a href="index.php?cat=Explorateur">Explorateurs</a>
+        <a href="index.php?cat=Mécanicien">Mécaniciens</a>
+        <a href="index.php?cat=Colosse">Colosses</a>
     </div>
-<?php endif; ?>
 
-<form method="GET" action="index.php" class="search-bar">
-    <input type="text" name="recherche" placeholder="Nom de la créature..." value="<?= htmlspecialchars($recherche) ?>">
-    <button type="submit">🔍</button>
-</form>
-
-<div class="nav-filtres" style="margin-bottom: 30px;">
-    <a href="index.php?cat=tous">Tous</a>
-    <a href="index.php?cat=Explorateur">Explorateurs</a>
-    <a href="index.php?cat=Mécanicien">Mécaniciens</a>
-    <a href="index.php?cat=Colosse">Colosses</a>
-    
     <?php if(is_admin_connected()): ?>
-        <div style="margin-top: 30px;">
-            <a href="admin.php" class="btn-forge">⚒️ Accéder à la Forge</a>
+        <div style="margin-top: 10px;">
+            <a href="admin.php" style="color: #8b5a2b; border: 1px dashed #8b5a2b; padding: 5px 15px; text-decoration:none; font-weight:bold;">⚒️ Forger une pièce</a>
+            <a href="commandes.php" style="color: #f4e4bc; text-decoration: none; font-weight: bold; margin-left:15px;">📜 Courrier</a>
         </div>
     <?php endif; ?>
 </div>
 
-<div style="margin: 20px 0;">
-    <a href="contact.php" style="
-        background: #d4af37; 
-        color: #1a110a; 
-        padding: 15px 25px; 
-        text-decoration: none; 
-        font-weight: bold; 
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-    ">
-        ✉️ PASSER UNE COMMANDE SPÉCIALE
-    </a>
-</div>
-
 <div class="grille-creatures">
+    
+    <div class="carte-speciale">
+        <a href="contact.php" style="text-decoration:none;">
+            <div class="image-container" style="display:flex; align-items:center; justify-content:center;">
+                <span style="font-size: 80px;">✨</span>
+            </div>
+            <h2>Chimère sur Mesure</h2>
+            <div class="description-text">
+                Un projet fou ? Une créature issue de vos rêves les plus mécaniques ?
+            </div>
+            <div class="prix-tag">Sur Devis 🟡</div>
+            <div style="margin-top:20px;">
+                <span class="btn-action" style="background: #ffd700; color: #1a110a; padding: 8px 18px; border-radius: 5px;">✍️ Envoyer mon idée</span>
+            </div>
+        </a>
+    </div>
+
     <?php if(count($toutes_les_creatures) > 0): ?>
         <?php foreach ($toutes_les_creatures as $animal): ?>
             <div class="carte-animal">
-                <a href="details.php?id=<?= htmlspecialchars($animal['id']) ?>" style="text-decoration: none; color: inherit;">
-                    <div>
-                        <img src="<?= htmlspecialchars($animal['image_path']) ?>" alt="<?= htmlspecialchars($animal['nom']) ?>" class="image-chimere">
-                        <h2 style="color: #c08b5c; margin-top: 15px;"><?= htmlspecialchars($animal['nom']) ?></h2>
-                        <span style="font-size: 11px; background: #8b5a2b; color: #1a110a; padding: 3px 10px; border-radius: 10px;"><?= htmlspecialchars($animal['categorie']) ?></span>
-                        <p style="font-style: italic; color: #d4af37; margin-top: 15px; font-size: 0.9em;">
-                            <?php 
-                                $desc = $animal['description'];
-                                echo htmlspecialchars((strlen($desc) > 100) ? substr($desc, 0, 100) . '...' : $desc);
-                            ?>
-                        </p>
+                <a href="details.php?id=<?= $animal['id'] ?>">
+                    <div class="image-container">
+                        <img src="<?= htmlspecialchars($animal['image_path']) ?>" class="image-chimere">
                     </div>
                 </a>
+                
+                <h2><?= html_entity_decode(htmlspecialchars($animal['nom'])) ?></h2>
+                
+                <div class="description-text">
+                    <?= html_entity_decode(htmlspecialchars((strlen($animal['description']) > 120) ? substr($animal['description'], 0, 120) . '...' : $animal['description'])) ?>
+                </div>
+                
+                <div class="prix-tag"><?= htmlspecialchars($animal['prix']) ?> 🟡</div>
 
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="font-size: 22px; font-weight: bold; color: #ffd700; border-top: 1px dashed #8b5a2b; padding-top: 10px; margin-bottom: 10px;">
-                        <?= htmlspecialchars($animal['prix']) ?> 🟡
-                    </p>
-                    
-                    <a href="details.php?id=<?= htmlspecialchars($animal['id']) ?>" class="btn-adopter">Détails techniques</a>
+                <div style="margin-top:20px; display: flex; justify-content: center; gap: 10px;">
+                    <a href="details.php?id=<?= $animal['id'] ?>" class="btn-action" style="background: #8b5a2b; color: #f4e4bc; padding: 8px 18px; text-decoration: none; border-radius: 5px;">🛠️ Voir Détails</a>
 
                     <?php if(is_admin_connected()): ?>
-                        <div class="btn-delete-form">
-                            <a href="admin.php?modifier=<?= htmlspecialchars($animal['id']) ?>" style="color: #8b5a2b; font-size: 12px; text-decoration: none; display: block; margin-bottom: 5px;">⚙️ Ajuster</a>
-                            <form method="POST" action="delete.php" style="display: inline;">
-                                <?php csrf_input(); ?>
-                                <input type="hidden" name="id" value="<?= htmlspecialchars($animal['id']) ?>">
-                                <button type="submit" onclick="return confirm('Voulez-vous vraiment démonter cette chimère ?');">🗑️ Démonter</button>
-                            </form>
-                        </div>
+                        <a href="edit.php?id=<?= $animal['id'] ?>" class="btn-action" style="background: #5d3a1a; color: #ffd700; padding: 8px 18px; text-decoration: none; border-radius: 5px; border: 1px solid #ffd700;">⚙️</a>
+
+                        <form method="POST" action="delete.php" onsubmit="return confirm('Démonter cette chimère ?');" style="display:inline;">
+                            <?php csrf_input(); ?>
+                            <input type="hidden" name="id" value="<?= $animal['id'] ?>">
+                            <button type="submit" class="btn-action" style="background:none; border: 1px solid #ff4444; color:#ff4444; padding: 8px 18px; border-radius: 5px;">🗑️</button>
+                        </form>
                     <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>
-    <?php else: ?>
-        <p style="color: #ffd700; font-style: italic;">Aucune pièce mécanique ne correspond à cette recherche...</p>
     <?php endif; ?>
 </div>
 
-</body>
-</html>
-        }
-    </style>
-</head>
-<body>
-
-<div class="auth-zone">
-    <?php if(isset($_SESSION['admin'])): ?>
-        <a href="logout.php" class="logout-link">🗝️ Déconnexion</a>
-    <?php else: ?>
-        <a href="login.php">🗝️ Accès</a>
-    <?php endif; ?>
-</div>
-
-<?php if(isset($_SESSION['admin'])): ?>
-    <div class="admin-bar">
-        <a href="commandes.php" style="color: #f4e4bc; text-decoration: none; font-weight: bold; letter-spacing: 1px;">
-            📜 CONSULTER LE COURRIER DES COMMANDES
-        </a>
-    </div>
-<?php endif; ?>
-
-<div class="engrenage engrenage-1">⚙️</div>
-<div class="engrenage engrenage-2">⚙️</div>
-
-<div class="enseigne">
-    <h1>L'ATELIER DES CHIMÈRES</h1>
-    <p>La ménagerie mécanique...</p>
-</div>
-
-<?php if(isset($_SESSION['nom_admin'])): ?>
-    <div style="margin-bottom: 30px;">
-        <p style="color: #ffd700; font-style: italic;">
-            ⚙️ Bienvenue, Maîtresse <strong><?php echo $_SESSION['nom_admin']; ?></strong>.
-        </p>
-    </div>
-<?php endif; ?>
-
-<form method="GET" action="index.php" class="search-bar">
-    <input type="text" name="recherche" placeholder="Nom de la créature..." value="<?php echo htmlspecialchars($recherche); ?>">
-    <button type="submit">🔍</button>
-</form>
-
-<div class="nav-filtres" style="margin-bottom: 30px;">
-    <a href="index.php?cat=tous">Tous</a>
-    <a href="index.php?cat=Explorateur">Explorateurs</a>
-    <a href="index.php?cat=Mécanicien">Mécaniciens</a>
-    <a href="index.php?cat=Colosse">Colosses</a>
-    
-    <?php if(isset($_SESSION['admin'])): ?>
-        <div style="margin-top: 30px;">
-            <a href="admin.php" class="btn-forge">⚒️ Accéder à la Forge</a>
-        </div>
-    <?php endif; ?>
-</div>
-
-<div style="margin: 20px 0;">
-    <a href="contact.php" style="
-        background: #d4af37; 
-        color: #1a110a; 
-        padding: 15px 25px; 
-        text-decoration: none; 
-        font-weight: bold; 
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-    ">
-        ✉️ PASSER UNE COMMANDE SPÉCIALE
-    </a>
-</div>
-
-<div class="grille-creatures">
-    <?php if(count($toutes_les_creatures) > 0): ?>
-        <?php foreach ($toutes_les_creatures as $animal): ?>
-            <div class="carte-animal">
-                <a href="details.php?id=<?php echo $animal['id']; ?>" style="text-decoration: none; color: inherit;">
-                    <div>
-                        <img src="<?php echo $animal['image_path']; ?>" class="image-chimere">
-                        <h2 style="color: #c08b5c; margin-top: 15px;"><?php echo $animal['nom']; ?></h2>
-                        <span style="font-size: 11px; background: #8b5a2b; color: #1a110a; padding: 3px 10px; border-radius: 10px;"><?php echo $animal['categorie']; ?></span>
-                        <p style="font-style: italic; color: #d4af37; margin-top: 15px; font-size: 0.9em;">
-                            <?php 
-                                $desc = $animal['description'];
-                                echo (strlen($desc) > 100) ? substr($desc, 0, 100) . '...' : $desc; 
-                            ?>
-                        </p>
-                    </div>
-                </a>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="font-size: 22px; font-weight: bold; color: #ffd700; border-top: 1px dashed #8b5a2b; padding-top: 10px; margin-bottom: 10px;">
-                        <?php echo $animal['prix']; ?> 🟡
-                    </p>
-                    
-                    <a href="details.php?id=<?php echo $animal['id']; ?>" class="btn-adopter">Détails techniques</a>
-
-                    <?php if(isset($_SESSION['admin'])): ?>
-                        <div style="margin-top: 15px; border-top: 1px solid rgba(139, 90, 43, 0.2); padding-top: 10px;">
-                            <a href="admin.php?modifier=<?php echo $animal['id']; ?>" style="color: #8b5a2b; font-size: 12px; text-decoration: none; display: block; margin-bottom: 5px;">⚙️ Ajuster</a>
-                            <a href="delete.php?id=<?php echo $animal['id']; ?>" onclick="confirmerDemontage(event, this.href);" style="color: #ff4444; font-size: 11px; text-decoration: none;">🗑️ Démonter</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <p style="color: #ffd700; font-style: italic;">Aucune pièce mécanique ne correspond à cette recherche...</p>
-    <?php endif; ?>
-</div>
-
-<div id="customAlert" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:#2b1810; border:3px solid #8b5a2b; padding:30px; border-radius:15px; text-align:center; max-width:400px; box-shadow: 0 0 20px #ffd700;">
-        <h3 style="color:#ffd700; margin-top:0;">⚠️ DÉMANTÈLEMENT ?</h3>
-        <p style="color:#d4af37;">Voulez-vous vraiment démonter cette chimère ? Les pièces seront éparpillées.</p>
-        <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
-            <button id="btnAnnuler" style="background:#444; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:5px;">Annuler</button>
-            <a id="linkConfirmer" href="#" style="background:#610b0b; color:white; padding:10px 20px; border-radius:5px; text-decoration:none; font-weight:bold;">DÉMONTER</a>
-        </div>
-    </div>
-</div>
+<button id="ascenseur" title="Retour en haut">▲</button>
 
 <script>
-function confirmerDemontage(event, url) {
-    event.preventDefault();
-    const modal = document.getElementById('customAlert');
-    modal.style.display = 'flex';
-    document.getElementById('btnAnnuler').onclick = () => modal.style.display = 'none';
-    document.getElementById('linkConfirmer').href = url;
-}
+    const btn = document.getElementById("ascenseur");
+    window.onscroll = function() {
+        if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+            btn.style.display = "block";
+        } else {
+            btn.style.display = "none";
+        }
+    };
+    btn.onclick = function() {
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    };
 </script>
 
 </body>

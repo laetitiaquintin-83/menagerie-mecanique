@@ -19,7 +19,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
         $nom = isset($_POST['nom']) ? sanitize_text($_POST['nom'], 100) : null;
         $cat = isset($_POST['categorie']) ? sanitize_text($_POST['categorie']) : null;
         $prix = isset($_POST['prix']) ? intval($_POST['prix']) : null;
-        $desc = isset($_POST['description']) ? sanitize_text($_POST['description'], 5000) : null;
+        
+        // CORRECTION : On utilise trim() pour ne pas transformer les apostrophes en codes HTML en BD
+        // La sécurité SQL est assurée par la requête préparée ($ins->execute)
+        $desc = isset($_POST['description']) ? trim($_POST['description']) : null;
         
         if (!$nom || !$cat || !$prix || !$desc) {
             $error = 'Tous les champs sont requis.';
@@ -33,8 +36,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
                 $error = $_SESSION['upload_error'] ?? 'Erreur lors de l\'upload du fichier.';
             } else {
                 try {
+                    // Les paramètres (?) garantissent qu'aucune injection SQL n'est possible
                     $ins = $db->prepare("INSERT INTO creatures (nom, categorie, prix, description, image_path) VALUES (?,?,?,?,?)");
                     $ins->execute([$nom, $cat, $prix, $desc, $image_path]);
+                    
                     $success = true;
                     set_flash_message('Chimère créée avec succès !', 'success');
                     header('Location: index.php');
@@ -42,7 +47,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
                 } catch (PDOException $e) {
                     error_log('Erreur création chimère: ' . $e->getMessage());
                     $error = 'Erreur lors de la création. Veuillez réessayer.';
-                    // Supprimer l'image en cas d'erreur
+                    // Supprimer l'image si la base de données a échoué
                     delete_image_file($image_path);
                 }
             }
@@ -89,11 +94,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter'])) {
             background: #f8d7da;
             color: #721c24;
             border-color: #f5c6cb;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
         }
         input, textarea, select { 
             width: 90%; 

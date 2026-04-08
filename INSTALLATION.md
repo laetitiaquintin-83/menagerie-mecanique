@@ -9,14 +9,15 @@
 
 Avant de commencer, installer :
 
-| Logiciel | Version | Lien |
-|----------|---------|------|
+| Logiciel                 | Version | Lien                |
+| ------------------------ | ------- | ------------------- |
 | **Laragon** ou **XAMPP** | Récente | https://laragon.org |
-| **PHP** | 7.4+ | Inclus dans Laragon |
-| **MySQL** | 5.7+ | Inclus dans Laragon |
-| **Git** (optionnel) | Récent | https://git-scm.com |
+| **PHP**                  | 7.4+    | Inclus dans Laragon |
+| **MySQL**                | 5.7+    | Inclus dans Laragon |
+| **Git** (optionnel)      | Récent  | https://git-scm.com |
 
 **Vérifier que ça fonctionne** :
+
 ```bash
 # Ouvrir terminal et taper:
 php -v          # Doit afficher PHP 7.4+
@@ -28,6 +29,7 @@ mysql --version # Doit afficher MySQL 5.7+
 ## 📦 ÉTAPE 1 : Récupérer le projet
 
 ### Option A : Via Git (recommandé)
+
 ```bash
 cd C:\laragon\www
 git clone https://github.com/votre-username/Menagerie_Mecanique.git
@@ -35,11 +37,13 @@ cd Menagerie_Mecanique
 ```
 
 ### Option B : Télécharger le ZIP
+
 1. Cliquer "Code" → "Download ZIP"
 2. Extraire dans `C:\laragon\www\`
 3. Renommer dossier en `Menagerie_Mecanique`
 
 ### Vérifier structure
+
 ```
 C:\laragon\www\Menagerie_Mecanique\
 ├── config.php           ✅ Configuration centrale
@@ -68,6 +72,7 @@ C:\laragon\www\Menagerie_Mecanique\
 ### 2.1 : Ouvrir Laragon
 
 **Laragon** (recommandé):
+
 1. Cliquer "Start" pour lancer serveurs
 2. Cliquer "MySQL" → "Open Terminal"
 3. Tapez : `mysql -u root` (Enter)
@@ -91,6 +96,7 @@ USE atelier_chimeres;
 ```
 
 **Ou directement importer le fichier** :
+
 ```bash
 mysql -u root atelier_chimeres < chimeres.sql
 ```
@@ -109,6 +115,7 @@ SELECT * FROM creatures LIMIT 3;
 ```
 
 **Résultat attendu** ✅ :
+
 ```
 5 tables : utilisateurs, creatures, commandes_speciales, ...
 ```
@@ -120,11 +127,13 @@ SELECT * FROM creatures LIMIT 3;
 ### 3.1 : Générer un password haché
 
 En terminal PHP :
+
 ```bash
 php -r "echo password_hash('admin123', PASSWORD_BCRYPT);"
 ```
 
 **Résultat** (exemple) :
+
 ```
 $2y$10$rK7Zd.KL9JM2jH5x8pQ4ZOZ5s.6t.9w.2m.1c.4v.7b.0d.3f
 ```
@@ -132,6 +141,7 @@ $2y$10$rK7Zd.KL9JM2jH5x8pQ4ZOZ5s.6t.9w.2m.1c.4v.7b.0d.3f
 ### 3.2 : Insérer l'utilisateur
 
 Dans MySQL :
+
 ```sql
 USE atelier_chimeres;
 
@@ -146,6 +156,7 @@ SELECT * FROM utilisateurs;
 ```
 
 **Identifiants de login** :
+
 - Username : `admin`
 - Password : `admin123`
 
@@ -159,6 +170,7 @@ SELECT * FROM utilisateurs;
 2. Cliquer "Start"
 
 **Vérifier** :
+
 - Apache : 🟢 (vert)
 - MySQL : 🟢 (vert)
 
@@ -181,6 +193,7 @@ SELECT * FROM utilisateurs;
 3. Cliquer "DÉVERROUILLER"
 
 **Résultat attendu** ✅ :
+
 - Redirection vers accueil
 - Message : "Bienvenue, Maîtresse admin"
 - Boutons admin visibles
@@ -190,6 +203,7 @@ SELECT * FROM utilisateurs;
 **Erreur** : "Erreur de connexion à la base de données"
 
 **Solutions** :
+
 1. Vérifier MySQL est lancé (Laragon Start)
 2. Vérifier `config.php` :
    - DB_HOST = `localhost` ✅
@@ -253,6 +267,7 @@ Créer `.htaccess` dans `images/` :
 **Symptôme** : Apache refuse de démarrer
 
 **Solution** :
+
 ```bash
 netstat -ano | findstr :80  # Voir qui utilise le port
 taskkill /PID 1234 /F       # Tuer le process
@@ -265,6 +280,7 @@ taskkill /PID 1234 /F       # Tuer le process
 **Symptôme** : Erreur "Can't create database"
 
 **Solution** :
+
 1. Vérifier que MySQL est bien lancé
 2. Vérifier les permissions sur `C:\laragon\data\mysql`
 
@@ -275,6 +291,7 @@ taskkill /PID 1234 /F       # Tuer le process
 **Symptôme** : Pas de style, images cassées
 
 **Solution** :
+
 1. Vérifier chemins relatifs dans les fichiers
 2. Vérifier dossiers existent :
    - `/images/` existe ✅

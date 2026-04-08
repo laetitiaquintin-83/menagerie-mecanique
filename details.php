@@ -31,6 +31,11 @@ if (!$animal) {
     <title>Rapport : <?= htmlspecialchars($animal['nom']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap" rel="stylesheet">
     <style>
+        /* --- CURSEUR ET STYLE GLOBAL --- */
+        :root {
+            --curseur-cle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path fill='%23b87333' stroke='%235d3a1a' stroke-width='1' d='M10 4C6.7 4 4 6.7 4 10c0 2.5 1.5 4.6 3.7 5.5L4 28l3 3 12.5-3.7c.9 2.2 3 3.7 5.5 3.7 3.3 0 6-2.7 6-6s-2.7-6-6-6c-1.5 0-2.8.5-3.8 1.4L15.5 14c2.2-.9 3.7-3 3.7-5.5 0-3.3-2.7-6-6-6zm0 3c1.7 0 3 1.3 3 3s-1.3 3-3 3-3-1.3-3-3 1.3-3 3-3z'/></svg>") 5 5;
+        }
+
         body { 
             background-color: #1a110a; 
             background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
@@ -38,19 +43,23 @@ if (!$animal) {
             font-family: 'Playfair Display', serif; 
             padding: 40px 20px;
             margin: 0;
+            cursor: var(--curseur-cle), auto !important;
         }
+
+        a, button { cursor: var(--curseur-cle), pointer !important; }
 
         .fiche-technique { 
             max-width: 900px; 
             margin: 0 auto; 
-            background: rgba(43, 24, 16, 0.85); 
+            background: rgba(43, 24, 16, 0.9); 
             border: 5px double #8b5a2b; 
             padding: 40px; 
             border-radius: 5px;
             box-shadow: 0 0 40px rgba(0,0,0,0.9);
+            position: relative;
         }
 
-        h1 { font-family: 'Special Elite', cursive; color: #ffd700; font-size: 2.5em; border-bottom: 2px solid #8b5a2b; padding-bottom: 10px; }
+        h1 { font-family: 'Special Elite', cursive; color: #ffd700; font-size: 2.5em; border-bottom: 2px solid #8b5a2b; padding-bottom: 10px; margin-top: 10px; }
         
         .image-container { text-align: center; margin: 30px 0; }
         .image-container img { 
@@ -72,13 +81,14 @@ if (!$animal) {
         }
 
         .histoire { 
-            font-size: 1.4em; 
-            line-height: 1.8; 
+            font-size: 1.3em; 
+            line-height: 1.6; 
             text-align: justify; 
             font-style: italic;
-            background: rgba(0,0,0,0.2);
-            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 25px;
             border-left: 4px solid #ffd700;
+            color: #f4e4bc;
         }
 
         .prix-label { 
@@ -98,19 +108,27 @@ if (!$animal) {
         }
         .btn-retour:hover { color: #ffd700; transform: translateX(-5px); }
 
-        .btn-commande {
+        /* BOUTON PANIER */
+        .btn-panier {
             display: inline-block;
             margin-top: 20px;
-            background: #ffd700;
+            background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
             color: #1a110a;
-            padding: 15px 30px;
+            padding: 18px 35px;
             text-decoration: none;
             font-family: 'Special Elite', cursive;
             font-weight: bold;
+            font-size: 1.1em;
             border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
             transition: 0.3s;
+            border: none;
         }
-        .btn-commande:hover { background: #8b5a2b; color: #ffd700; transform: scale(1.05); }
+        .btn-panier:hover { 
+            transform: scale(1.05) translateY(-3px); 
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+            filter: brightness(1.1);
+        }
     </style>
 </head>
 <body>
@@ -118,9 +136,9 @@ if (!$animal) {
     <div class="fiche-technique">
         <a href="index.php" class="btn-retour">← Retour à la collection</a>
         
-        <p style="text-align:right; font-family: 'Special Elite'; opacity: 0.6;">DOSSIER REF-<?= htmlspecialchars($animal['id']) ?>-B</p>
+        <p style="text-align:right; font-family: 'Special Elite'; opacity: 0.6; margin: 0;">DOSSIER REF-<?= htmlspecialchars($animal['id']) ?>-B</p>
         
-        <h1>PROTOCOLE : <?= htmlspecialchars(strtoupper($animal['nom'])) ?></h1>
+        <h1>PROTOCOLE : <?= html_entity_decode(htmlspecialchars(strtoupper($animal['nom']))) ?></h1>
         
         <div class="image-container">
             <img src="<?= htmlspecialchars($animal['image_path']) ?>" alt="<?= htmlspecialchars($animal['nom']) ?>">
@@ -129,16 +147,16 @@ if (!$animal) {
         <div class="badge-cat">SÉRIE : <?= htmlspecialchars($animal['categorie']) ?></div>
 
         <div class="histoire">
-            "<?= nl2br(htmlspecialchars($animal['description'])) ?>"
+            "<?= nl2br(html_entity_decode(htmlspecialchars($animal['description']))) ?>"
         </div>
 
         <div class="prix-label">
             VALEUR : <?= htmlspecialchars($animal['prix']) ?> 🟡
         </div>
 
-        <div style="margin-top: 30px;">
-            <a href="contact.php?projet=<?= urlencode($animal['nom']) ?>" class="btn-commande">
-                ✉️ PASSER COMMANDE POUR CE MODÈLE
+        <div style="margin-top: 40px;">
+            <a href="ajouter_panier.php?id=<?= $animal['id'] ?>&nom=<?= urlencode($animal['nom']) ?>&prix=<?= $animal['prix'] ?>" class="btn-panier">
+                📥 AJOUTER À MON INVENTAIRE (PANIER)
             </a>
         </div>
 
