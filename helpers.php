@@ -458,6 +458,174 @@ function show_flash_and_clear() {
 }
 
 /**
+ * ===============================================
+ * GESTION DES STATUTS DE COMMANDE
+ * ===============================================
+ */
+
+/**
+ * Liste des statuts disponibles
+ */
+function get_statuts_options() {
+    return [
+        'en_attente' => ['label' => '⏳ En attente', 'color' => '#ffd700'],
+        'confirmee' => ['label' => '✅ Confirmée', 'color' => '#90ee90'],
+        'expedie' => ['label' => '📦 Expédiée', 'color' => '#87ceeb'],
+        'livree' => ['label' => '🎉 Livrée', 'color' => '#32cd32'],
+        'annulee' => ['label' => '❌ Annulée', 'color' => '#ff6b6b']
+    ];
+}
+
+/**
+ * Obtient le label et couleur d'un statut
+ */
+function get_statut_display($statut) {
+    $statuts = get_statuts_options();
+    return $statuts[$statut] ?? ['label' => $statut, 'color' => '#d4af37'];
+}
+
+/**
+ * Met à jour le statut d'une commande
+ */
+function update_commande_statut($id, $nouveau_statut, $type = 'boutique') {
+    global $db;
+    
+    try {
+        // Valider le StatutSolver
+        $statuts_valides = array_keys(get_statuts_options());
+        if (!in_array($nouveau_statut, $statuts_valides)) {
+            return false;
+        }
+        
+        $table = ($type === 'devis') ? 'commandes_speciales' : 'commandes';
+        $id_column = ($type === 'devis') ? 'id' : 'id';
+        
+        $stmt = $db->prepare("UPDATE $table SET statut = ? WHERE id = ?");
+        return $stmt->execute([$nouveau_statut, $id]);
+    } catch (Exception $e) {
+        error_log('Erreur statut: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * ===============================================
+ * GESTION DES FAVORIS
+ * ===============================================
+ */
+
+/**
+ * Obtient l'ID de session utilisateur unique
+ */
+function get_user_id() {
+    if (is_admin_connected()) {
+        return 'admin_' . session_id();
+    }
+    return 'user_' . session_id();
+}
+
+/**
+ * Ajoute une créature aux favoris
+ */
+function add_favorite($creature_id) {
+    global $db;
+    
+    try {
+        $user_id = get_user_id();
+        $creature_id = (int)$creature_id;
+        
+        $stmt = $db->prepare("INSERT IGNORE INTO favorites (user_session, creature_id) VALUES (?, ?)");
+        return $stmt->execute([$user_id, $creature_id]);
+    } catch (Exception $e) {
+        error_log('Erreur ajout favori: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Supprime une créature des favoris
+ */
+function remove_favorite($creature_id) {
+    global $db;
+    
+    try {
+        $user_id = get_user_id();
+        $creature_id = (int)$creature_id;
+        
+        $stmt = $db->prepare("DELETE FROM favorites WHERE user_session = ? AND creature_id = ?");
+        return $stmt->execute([$user_id, $creature_id]);
+    } catch (Exception $e) {
+        error_log('Erreur suppression favori: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Vérifie si une créature est favorite
+ */
+function is_favorite($creature_id) {
+    global $db;
+    
+    try {
+        $user_id = get_user_id();
+        $creature_id = (int)$creature_id;
+        
+        $stmt = $db->prepare("SELECT id FROM favorites WHERE user_session = ? AND creature_id = ?");
+        $stmt->execute([$user_id, $creature_id]);
+        return $stmt->rowCount() > 0;
+    } catch (Exception $e) {
+        error_log('Erreur vérifi favori: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Obtient tous les favoris de l'utilisateur
+ */
+function get_user_favorites() {
+    global $db;
+    
+    try {
+        $user_id = get_user_id();
+        
+        $stmt = $db->prepare("
+            SELECT c.* FROM creatures c
+            INNER JOIN favorites f ON c.id = f.creature_id
+            WHERE f.user_session = ?
+            ORDER BY f.date_ajout DESC
+        ");
+        $stmt->execute([$user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('Erreur récupération favoris: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Ajoute un bouton cœur pour un favori (HTML + JS)
+ */
+function render_favorite_button($creature_id) {
+    $is_fav = is_favorite($creature_id);
+    $class = $is_fav ? 'favorite-btn active' : 'favorite-btn';
+    $icon = $is_fav ? '❤️' : '🤍';
+    
+    return "
+        <button class='$class' data-creature-id='$creature_id' title='Ajouter/Retirer des favoris' style='
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        '>
+            $icon
+        </button>
+    ";
+}
+
+/**
  * Stocke un message flash pour l'affichage suivant
  * 
  * PARAMÈTRES :

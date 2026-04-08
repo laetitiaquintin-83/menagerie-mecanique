@@ -14,8 +14,8 @@
     --accent-gold: #ffd700;
     --error-red: #ff4444;
     
-    /* Curseur personnalisé - Clef à molette cuivrée */
-    --curseur-cle: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><defs><linearGradient id='cuivre' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23d4a574;stop-opacity:1'/><stop offset='50%' style='stop-color:%23b89968;stop-opacity:1'/><stop offset='100%' style='stop-color:%238b5a2b;stop-opacity:1'/></linearGradient></defs><g><path d='M8 10c0-2.2 1.8-4 4-4s4 1.8 4 4c0 1.5-.8 2.8-2 3.4v10.6h-4V13.4c-1.2-.6-2-2-2-3.4z' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5'/><rect x='10' y='24' width='8' height='2' rx='1' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5'/><circle cx='12' cy='10' r='1.5' fill='%235d3a1a' opacity='0.4'/><path d='M20 16l8-4v2l-8 4v-2z' fill='url(%23cuivre)' stroke='%235d3a1a' stroke-width='0.5' opacity='0.8'/></g></svg>") 5 5;
+    /* Curseur personnalisé - Style steampunk */
+    --curseur-cle: move;
 }
 
 /* ===== STYLES GLOBAUX ===== */
@@ -34,11 +34,11 @@ body {
     color: var(--text-gold);
     font-family: 'Georgia', serif;
     line-height: 1.6;
-    cursor: var(--curseur-cle), auto !important;
+    cursor: auto;
 }
 
 a, button {
-    cursor: var(--curseur-cle), pointer !important;
+    cursor: pointer !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

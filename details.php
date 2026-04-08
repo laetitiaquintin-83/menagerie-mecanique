@@ -22,6 +22,9 @@ if (!$animal) {
     header('Location: index.php'); 
     exit(); 
 }
+
+// Récupérer les messages flash pour les convertir en toasts
+$flash = show_flash_and_clear();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -31,6 +34,7 @@ if (!$animal) {
     <title>Rapport : <?= htmlspecialchars($animal['nom']) ?></title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,900;1,400&display=swap" rel="stylesheet">
+    <script src="toast.js"></script>
     <style>
         /* --- CURSEUR ET STYLE GLOBAL --- */
         body { 
@@ -40,10 +44,10 @@ if (!$animal) {
             font-family: 'Playfair Display', serif; 
             padding: 40px 20px;
             margin: 0;
-            cursor: var(--curseur-cle), auto !important;
+            cursor: auto !important;
         }
 
-        a, button { cursor: var(--curseur-cle), pointer !important; }
+        a, button { cursor: pointer !important; }
 
         .fiche-technique { 
             max-width: 900px; 
@@ -173,6 +177,14 @@ if (!$animal) {
             Document certifié par l'Atelier des Chimères - 1894
         </p>
     </div>
+
+    <?php if (!empty($flash['message'])): ?>
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            showToast('<?= addslashes($flash['message']) ?>', '<?= $flash['type'] ?? 'info' ?>');
+        });
+    </script>
+    <?php endif; ?>
 
 </body>
 </html>

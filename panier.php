@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['commander'])) {
 }
 
 $total_panier = 0;
+
+// Récupérer les messages flash pour les convertir en toasts
+$flash = show_flash_and_clear();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -52,6 +55,7 @@ $total_panier = 0;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Votre Panier - L'Atelier</title>
     <link rel="stylesheet" href="style.css">
+    <script src="toast.js"></script>
     <style>
         body { background-color: #1a110a; color: #d4af37; font-family: 'Georgia', serif; text-align: center; }
         .panier-container { max-width: 800px; margin: 50px auto; background: rgba(43, 24, 16, 0.9); padding: 30px; border: 2px solid #8b5a2b; border-radius: 15px; }
@@ -118,5 +122,14 @@ $total_panier = 0;
             </div>
         <?php endif; ?>
     </div>
+
+<?php if (!empty($flash['message'])): ?>
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        showToast('<?= addslashes($flash['message']) ?>', '<?= $flash['type'] ?? 'info' ?>');
+    });
+</script>
+<?php endif; ?>
+
 </body>
 </html>
